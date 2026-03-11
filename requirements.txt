@@ -1,11 +1,11 @@
 anthropic
-python-dotenv
-pymongo
-openai
-networkx
+fastapi
 matplotlib
+networkx
 numpy
+openai
+pymongo
+python-dotenv
 pyyaml
 sentence-transformers
-fastapi
 uvicorn[standard]
