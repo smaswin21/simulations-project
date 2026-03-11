@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSim } from '../context/SimContext.jsx'
 import { runSimulation } from '../api/simulation.js'
 
@@ -40,26 +40,30 @@ export function useSimulation() {
     }
   }, [activeScenario?.isRunning, activeScenario?.params.speed, advanceRound])
 
-  const togglePlayback = async () => {
+  const togglePlayback = useCallback(async () => {
     if (!activeScenario || isLoading) return
 
     const hasRealData = Array.isArray(activeScenario._rounds) && activeScenario._rounds.length > 0
-    const atStart = activeScenario.round === 0
+    const needsFetch = activeScenario.round === 0 && !hasRealData
 
-    if (atStart && !hasRealData) {
+    if (needsFetch) {
       // First play — fetch real data from backend
       setLoading(true)
       try {
         const { params } = activeScenario
+        const scenarioId = activeScenario.id
         const data = await runSimulation({
           memoryOn: params.memoryOn,
           rounds: params.rounds,
           seed: params.seed ?? null,
         })
+        if (scenarioId !== activeScenario.id) return  // stale: user switched scenario
         setSimulationData(data)
         setRunning(true)
       } catch (err) {
         setError(err.message || 'Simulation failed')
+      } finally {
+        setLoading(false)
       }
       return
     }
@@ -67,7 +71,7 @@ export function useSimulation() {
     // Already have data — pause or resume
     if (activeScenario.round >= activeScenario.maxRounds) return
     setRunning(!activeScenario.isRunning)
-  }
+  }, [activeScenario, isLoading, setLoading, setError, setSimulationData, setRunning, advanceRound])
 
   return {
     isRunning: activeScenario?.isRunning || false,
