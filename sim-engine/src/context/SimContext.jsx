@@ -6,6 +6,8 @@ const SimContext = createContext(null)
 const initialState = {
   scenarios: mockScenarios,
   activeScenarioId: mockScenarios[0].id,
+  isLoading: false,
+  error: null,
 }
 
 function simReducer(state, action) {
@@ -47,6 +49,44 @@ function simReducer(state, action) {
       }
     }
 
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload, error: null }
+
+    case 'SET_ERROR':
+      return { ...state, isLoading: false, error: action.payload }
+
+    case 'SET_SIMULATION_DATA': {
+      const { rounds, summary } = action.payload
+      const resourceExtraction = rounds.map(r => r.metrics?.resourceExtraction ?? 0)
+      const statusOverTime = rounds.map(r => ({
+        round: r.round,
+        ...(r.metrics?.statusOverTime ?? { thriving: 0, strained: 0, struggling: 0, depleted: 0 }),
+      }))
+      const resourceStock = rounds.map(r => r.metrics?.resourceStock ?? 0)
+      const giniCoefficient = rounds.map(r => r.metrics?.giniCoefficient ?? 0)
+      const lastRound = rounds[rounds.length - 1] ?? {}
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+        scenarios: state.scenarios.map(s =>
+          s.id === state.activeScenarioId
+            ? {
+                ...s,
+                round: 0,
+                maxRounds: rounds.length,
+                isRunning: false,
+                agents: lastRound.agents ?? s.agents,
+                metrics: { resourceExtraction, statusOverTime, resourceStock, giniCoefficient },
+                stats: lastRound.stats ?? s.stats,
+                summary,
+                _rounds: rounds,
+              }
+            : s
+        ),
+      }
+    }
+
     default:
       return state
   }
@@ -71,6 +111,10 @@ export function SimProvider({ children }) {
     dispatch({ type: 'ADVANCE_ROUND' })
   }, [])
 
+  const setLoading = useCallback((v) => dispatch({ type: 'SET_LOADING', payload: v }), [])
+  const setError = useCallback((msg) => dispatch({ type: 'SET_ERROR', payload: msg }), [])
+  const setSimulationData = useCallback((data) => dispatch({ type: 'SET_SIMULATION_DATA', payload: data }), [])
+
   const activeScenario = state.scenarios.find(s => s.id === state.activeScenarioId)
 
   const value = {
@@ -81,6 +125,11 @@ export function SimProvider({ children }) {
     updateParams,
     setRunning,
     advanceRound,
+    isLoading: state.isLoading,
+    error: state.error,
+    setLoading,
+    setError,
+    setSimulationData,
   }
 
   return <SimContext.Provider value={value}>{children}</SimContext.Provider>
