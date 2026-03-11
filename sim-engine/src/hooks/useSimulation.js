@@ -1,8 +1,17 @@
 import { useEffect, useRef } from 'react'
 import { useSim } from '../context/SimContext.jsx'
+import { runSimulation } from '../api/simulation.js'
 
 export function useSimulation() {
-  const { activeScenario, advanceRound, setRunning } = useSim()
+  const {
+    activeScenario,
+    advanceRound,
+    setRunning,
+    isLoading,
+    setLoading,
+    setError,
+    setSimulationData,
+  } = useSim()
   const intervalRef = useRef(null)
 
   const speedMs = {
@@ -31,19 +40,40 @@ export function useSimulation() {
     }
   }, [activeScenario?.isRunning, activeScenario?.params.speed, advanceRound])
 
-  const togglePlayback = () => {
-    if (activeScenario) {
-      if (activeScenario.round >= activeScenario.maxRounds) {
-        return // Already at max round
+  const togglePlayback = async () => {
+    if (!activeScenario || isLoading) return
+
+    const hasRealData = Array.isArray(activeScenario._rounds) && activeScenario._rounds.length > 0
+    const atStart = activeScenario.round === 0
+
+    if (atStart && !hasRealData) {
+      // First play — fetch real data from backend
+      setLoading(true)
+      try {
+        const { params } = activeScenario
+        const data = await runSimulation({
+          memoryOn: params.memoryOn,
+          rounds: params.rounds,
+          seed: params.seed ?? null,
+        })
+        setSimulationData(data)
+        setRunning(true)
+      } catch (err) {
+        setError(err.message || 'Simulation failed')
       }
-      setRunning(!activeScenario.isRunning)
+      return
     }
+
+    // Already have data — pause or resume
+    if (activeScenario.round >= activeScenario.maxRounds) return
+    setRunning(!activeScenario.isRunning)
   }
 
   return {
     isRunning: activeScenario?.isRunning || false,
     currentRound: activeScenario?.round || 0,
     maxRounds: activeScenario?.maxRounds || 0,
+    isLoading,
     togglePlayback,
   }
 }
