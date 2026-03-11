@@ -7,3 +7,5 @@ matplotlib
 numpy
 pyyaml
 sentence-transformers
+fastapi
+uvicorn[standard]
