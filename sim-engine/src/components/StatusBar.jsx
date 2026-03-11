@@ -2,7 +2,7 @@ import { useSim } from '../context/SimContext.jsx'
 import { useSimulation } from '../hooks/useSimulation.js'
 
 function StatusBar() {
-  const { activeScenario } = useSim()
+  const { activeScenario, isLoading, error } = useSim()
   const { isRunning, togglePlayback } = useSimulation()
 
   if (!activeScenario) return null
@@ -14,9 +14,15 @@ function StatusBar() {
       <button
         className={`retro-btn status-bar__play ${isRunning ? 'retro-btn--active' : ''}`}
         onClick={togglePlayback}
+        disabled={isLoading}
       >
-        {isRunning ? '❚❚' : '▶'}
+        {isLoading ? '...' : isRunning ? '❚❚' : '▶'}
       </button>
+      {error && (
+        <div className="status-bar__error" style={{ color: 'red', fontSize: '0.8em' }}>
+          {error}
+        </div>
+      )}
       <div className="status-bar__item">
         <span className="status-bar__label">Round</span>
         <span className="status-bar__value">{round}/{maxRounds}</span>
