@@ -19,7 +19,7 @@ function StatusBar() {
         {isLoading ? '...' : isRunning ? '❚❚' : '▶'}
       </button>
       {error && (
-        <div className="status-bar__error" style={{ color: 'red', fontSize: '0.8em' }}>
+        <div className="status-bar__error" role="alert" style={{ color: 'red', fontSize: '0.8em', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {error}
         </div>
       )}
