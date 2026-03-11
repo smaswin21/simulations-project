@@ -44,7 +44,16 @@ function simReducer(state, action) {
           if (s.id !== state.activeScenarioId) return s
           const nextRound = Math.min(s.round + 1, s.maxRounds)
           const isRunning = nextRound < s.maxRounds ? s.isRunning : false
-          return { ...s, round: nextRound, isRunning }
+          const roundData = s._rounds?.[nextRound - 1]
+          return {
+            ...s,
+            round: nextRound,
+            isRunning,
+            ...(roundData ? {
+              agents: roundData.agents ?? s.agents,
+              stats: roundData.stats ?? s.stats,
+            } : {}),
+          }
         }),
       }
     }
