@@ -50,13 +50,16 @@ function simReducer(state, action) {
     }
 
     case 'SET_LOADING':
-      return { ...state, isLoading: action.payload, error: null }
+      return { ...state, isLoading: action.payload, ...(action.payload ? { error: null } : {}) }
 
     case 'SET_ERROR':
       return { ...state, isLoading: false, error: action.payload }
 
     case 'SET_SIMULATION_DATA': {
       const { rounds, summary } = action.payload
+      if (!rounds?.length) {
+        return { ...state, isLoading: false, error: 'Simulation returned no rounds.' }
+      }
       const resourceExtraction = rounds.map(r => r.metrics?.resourceExtraction ?? 0)
       const statusOverTime = rounds.map(r => ({
         round: r.round,
@@ -111,7 +114,7 @@ export function SimProvider({ children }) {
     dispatch({ type: 'ADVANCE_ROUND' })
   }, [])
 
-  const setLoading = useCallback((v) => dispatch({ type: 'SET_LOADING', payload: v }), [])
+  const setLoading = useCallback((loading) => dispatch({ type: 'SET_LOADING', payload: loading }), [])
   const setError = useCallback((msg) => dispatch({ type: 'SET_ERROR', payload: msg }), [])
   const setSimulationData = useCallback((data) => dispatch({ type: 'SET_SIMULATION_DATA', payload: data }), [])
 
