@@ -1,0 +1,32 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: var(--nes-dark);
+  border-bottom: 4px solid var(--nes-border);
+  height: 60px;
+}
+
+.navbar__title {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-lg);
+  color: var(--nes-yellow);
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.navbar__title-star {
+  color: var(--nes-yellow);
+  animation: blink 1.5s step-start infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.navbar__tabs {
+  display: flex;
+  gap: 8px;
+}

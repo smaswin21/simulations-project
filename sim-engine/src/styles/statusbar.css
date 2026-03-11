@@ -1,0 +1,52 @@
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 20px;
+  background-color: var(--nes-dark);
+  border-top: 4px solid var(--nes-border);
+  height: 44px;
+}
+
+.status-bar__play {
+  padding: 4px 12px;
+  font-size: var(--font-size-sm);
+  min-width: 40px;
+  text-align: center;
+}
+
+.status-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-bar__label {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--nes-gray);
+  text-transform: uppercase;
+}
+
+.status-bar__value {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-xs);
+  color: var(--nes-white);
+}
+
+.status-bar__icon {
+  font-size: var(--font-size-md);
+}
+
+.status-bar__icon--alive {
+  color: var(--nes-red);
+}
+
+.status-bar__icon--dead {
+  color: var(--nes-gray);
+}
+
+.status-bar__icon--resource {
+  color: var(--nes-green);
+  font-weight: bold;
+}

@@ -1,0 +1,63 @@
+/* Google Fonts import for Press Start 2P */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* NES Color Palette */
+:root {
+  --nes-black: #0F0F23;
+  --nes-dark: #1A1A2E;
+  --nes-blue: #3B82F6;
+  --nes-red: #EF4444;
+  --nes-green: #22C55E;
+  --nes-yellow: #EAB308;
+  --nes-white: #F5F5F5;
+  --nes-gray: #6B7280;
+  --nes-cyan: #06B6D4;
+  --nes-magenta: #D946EF;
+  --nes-orange: #F97316;
+  --nes-border: #4A4A6A;
+  
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-size-xs: 6px;
+  --font-size-sm: 8px;
+  --font-size-md: 10px;
+  --font-size-lg: 14px;
+  --font-size-xl: 18px;
+  --font-size-title: 24px;
+}
+
+/* Reset */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-pixel);
+  font-size: var(--font-size-sm);
+  background-color: var(--nes-black);
+  color: var(--nes-white);
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nes-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nes-border);
+  border: 2px solid var(--nes-dark);
+}

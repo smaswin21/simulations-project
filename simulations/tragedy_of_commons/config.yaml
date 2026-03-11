@@ -1,0 +1,51 @@
+simulation:
+  name: "Tragedy of the Commons"
+  version: "1.0"
+  max_rounds: 10
+  description_file: "scenario.md"
+
+world:
+  locations:
+    - name: "Village Square"
+      type: "public"
+      starting_location: true
+      actions_allowed: ["speak", "move"]
+      aliases: ["village", "square", "village square"]
+    - name: "Common Pasture"
+      type: "resource"
+      actions_allowed: ["speak", "move", "graze", "share"]
+      aliases: ["pasture", "common", "common pasture", "field"]
+    - name: "Notice Board"
+      type: "public"
+      actions_allowed: ["speak", "move"]
+      aliases: ["notice", "board", "notice board"]
+
+agents:
+  count: 18
+  persona_distribution:
+    big_five: "stratified"
+    crt_distribution: [0.2, 0.3, 0.3, 0.2]
+    risk_preference: "uniform"
+
+resource:
+  name: "grazing_units"
+  unit: "units"
+  location: "Common Pasture"
+  initial_supply: 120
+  resource_extraction_action: "GRAZE"
+  visibility: "all"
+
+commons:
+  enabled: true
+  regeneration_per_round: 12
+  max_stock: 120
+  collapse_threshold: 20
+  default_sustainable_quota: 1
+
+metrics:
+  track:
+    - "gini_coefficient"
+    - "cooperation_rate"
+    - "resource_stock"
+    - "accountability_events"
+    - "commitment_follow_through"

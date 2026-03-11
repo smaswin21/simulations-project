@@ -1,0 +1,9 @@
+anthropic
+python-dotenv
+pymongo
+openai
+networkx
+matplotlib
+numpy
+pyyaml
+sentence-transformers
