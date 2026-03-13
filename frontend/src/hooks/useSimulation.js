@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { startStream } from '../api/simulation.js'
+import { startStream, startReplay } from '../api/simulation.js'
 import { adaptRound, buildActionLog } from '../utils/adapter.js'
 
 const SPEED_MS = { '1x': 3000, '2x': 1500, '4x': 750 }
@@ -115,6 +115,57 @@ export function useSimulation() {
     }
   }, [params, closeEventSource, clearPlayTimer])
 
+  // ── Replay a stored run from MongoDB ────────────────────────────────
+  const loadRun = useCallback((simulationId) => {
+    closeEventSource()
+    clearPlayTimer()
+    setRounds([])
+    setCurrentIndex(0)
+    setSummary(null)
+    setError(null)
+    setStatus('streaming')
+
+    const { eventSource } = startReplay(simulationId)
+    eventSourceRef.current = eventSource
+
+    eventSource.onmessage = (evt) => {
+      let data
+      try {
+        data = JSON.parse(evt.data)
+      } catch {
+        return
+      }
+
+      if (data.status === 'complete') {
+        setSummary(data.summary)
+        setStatus('done')
+        closeEventSource()
+        return
+      }
+
+      if (data.status === 'error') {
+        setError(data.error || 'Unknown error from server')
+        setStatus('error')
+        closeEventSource()
+        return
+      }
+
+      // Normal round payload — adapt and append
+      const adapted = adaptRound(data)
+      setRounds((prev) => {
+        const next = [...prev, adapted]
+        setCurrentIndex(next.length - 1)
+        return next
+      })
+    }
+
+    eventSource.onerror = () => {
+      setError('SSE connection lost')
+      setStatus('error')
+      closeEventSource()
+    }
+  }, [closeEventSource, clearPlayTimer])
+
   // ── Playback controls ────────────────────────────────────────────────
   const play = useCallback(() => {
     if (rounds.length === 0) return
@@ -177,6 +228,7 @@ export function useSimulation() {
     setParams,
     setSpeed,
     runSimulation,
+    loadRun,
     play,
     pause,
     stepBack,

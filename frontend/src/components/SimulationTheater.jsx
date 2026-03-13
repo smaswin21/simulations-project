@@ -45,6 +45,7 @@ export default function SimulationTheater() {
         params={sim.params}
         onParamsChange={sim.setParams}
         onRun={sim.runSimulation}
+        onLoadRun={sim.loadRun}
       />
 
       <div style={{

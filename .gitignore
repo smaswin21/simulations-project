@@ -1,7 +1,6 @@
 .env
 venv/
 logs/
-data/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
@@ -22,3 +21,5 @@ docs/plans
 docs/
 
 .superpowers/
+
+node_modules/

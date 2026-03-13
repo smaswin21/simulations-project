@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import ResourceBar from './shared/ResourceBar.jsx'
+import { listRuns } from '../api/simulation.js'
 
 const VIEW_MODES = [
   { id: 'world', label: 'World', icon: '◉' },
@@ -11,9 +13,22 @@ export default function TopBar({
   depotStock, depotMax,
   round, maxRounds,
   status, params, onParamsChange, onRun,
+  onLoadRun,
 }) {
   const isStreaming = status === 'streaming'
   const canRun = status === 'idle' || status === 'done' || status === 'error' || status === 'paused'
+
+  // Past runs for the load dropdown
+  const [pastRuns, setPastRuns] = useState([])
+  const [showRunPicker, setShowRunPicker] = useState(false)
+
+  useEffect(() => {
+    if (showRunPicker && pastRuns.length === 0) {
+      listRuns(20)
+        .then(setPastRuns)
+        .catch(() => {})
+    }
+  }, [showRunPicker, pastRuns.length])
 
   return (
     <div style={{
@@ -131,6 +146,68 @@ export default function TopBar({
             >
               {isStreaming ? 'Running…' : 'Run'}
             </button>
+
+            {/* Load past run */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowRunPicker((v) => !v)}
+                disabled={isStreaming}
+                style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 11,
+                  fontWeight: 600, border: '1px solid #334155',
+                  cursor: isStreaming ? 'not-allowed' : 'pointer',
+                  background: showRunPicker ? 'rgba(51,65,85,0.4)' : 'transparent',
+                  color: isStreaming ? '#475569' : '#94a3b8',
+                }}
+              >
+                Load
+              </button>
+              {showRunPicker && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 4,
+                  background: '#0f172a', border: '1px solid #334155',
+                  borderRadius: 8, minWidth: 280, maxHeight: 320,
+                  overflowY: 'auto', zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                }}>
+                  {pastRuns.length === 0 ? (
+                    <div style={{ padding: '12px 16px', fontSize: 11, color: '#64748b' }}>
+                      No completed runs found
+                    </div>
+                  ) : (
+                    pastRuns.map((run) => {
+                      const ts = run.timestamp
+                        ? new Date(run.timestamp).toLocaleString()
+                        : 'Unknown time'
+                      const rounds = run.rounds_count ?? '?'
+                      const gini = run.final_summary?.ablation_metrics?.gini_final
+                      return (
+                        <button
+                          key={run.run_id}
+                          onClick={() => {
+                            setShowRunPicker(false)
+                            onLoadRun(run.run_id)
+                          }}
+                          style={{
+                            display: 'block', width: '100%', textAlign: 'left',
+                            padding: '10px 16px', background: 'transparent',
+                            border: 'none', borderBottom: '1px solid #1e293b',
+                            cursor: 'pointer', color: '#e2e8f0',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(51,65,85,0.4)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <div style={{ fontSize: 11, fontWeight: 600 }}>{ts}</div>
+                          <div style={{ fontSize: 10, color: '#64748b', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                            {rounds} rounds{gini != null ? ` · Gini ${gini.toFixed(3)}` : ''}
+                            {' · '}{run.status}
+                          </div>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Depot stock */}
