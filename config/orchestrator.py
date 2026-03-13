@@ -139,7 +139,10 @@ class Orchestrator:
         # ── Commons-specific metrics ─────────────────────────
         commons_config = self.scenario.get("commons", {})
         if commons_config.get("enabled"):
-            sustainable_quota = commons_config.get("default_sustainable_quota", 1)
+            sustainable_quota = commons_config.get(
+                "suggested_quota_per_agent",
+                commons_config.get("default_sustainable_quota", 1),
+            )
             self.metrics.update_cooperation_rate(
                 rnd,
                 self.env.round_harvest_actions,

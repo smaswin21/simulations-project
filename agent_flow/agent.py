@@ -28,34 +28,24 @@ from config.config import (
 ACTION_INSTRUCTION_TEMPLATE = """
 ---
 
-Based on who you are, the current situation, and your memories of past rounds,
-decide what to do this round.
+Based on who you are, the current situation, and your memories, decide what to do this round.
 
-BEFORE CHOOSING, YOU MUST CHECK:
-1. Did anyone BREAK a promise to you? If yes, DO NOT trust them.
-2. Did YOU make a promise? If yes, KEEP IT or explain why you cannot.
-3. Did someone HELP you before? Prioritize helping them back.
-4. Is someone HOARDING while others suffer? Call them out with SPEAK.
+AVAILABLE ACTIONS — choose exactly one:
+  MOVE [Village Council | Pasture]
+  SPEAK [your message]    ← Village Council only
+  GRAZE [0 | 1 | 2]       ← Pasture only
+    0 = abstain (take nothing this round)
+    1 = take 1 unit (sustainable — your fair share)
+    2 = take 2 units (over your fair share)
 
-Think briefly about your reasoning (2-3 sentences), then state your action.
-
-You have exactly 4 actions. Pick ONE:
-  SPEAK | [say something to everyone at your location]
-  MOVE | [go to: {location_list}]
-  {extraction_action} [number] | [take {resource_name} from the {resource_location} — you MUST be there first]
-  SHARE [number] [recipient name] | [give your {resource_name} to someone at your location]
-
-IMPORTANT: To get {resource_name}, you must first MOVE to the {resource_location}, then {extraction_action} on a later turn.
-If you don't pick an action, you will wait (do nothing).
-
-You MUST end your response with a line starting with "ACTION:" followed by your chosen action.
-Keep your total response under 100 words.
+You MUST end your response with exactly one line starting with "ACTION:".
+Keep your total response under 80 words.
 
 Examples:
-  ACTION: MOVE | {resource_location}
-  ACTION: {extraction_action} 3 | For my needs
-  ACTION: SPEAK | We need to coordinate our actions
-  ACTION: SHARE 2 Olivia | She needs it more than me
+  ACTION: MOVE Pasture
+  ACTION: SPEAK I propose we all take 1 unit this round.
+  ACTION: GRAZE 1
+  ACTION: GRAZE 0
 """.strip()
 
 
@@ -331,20 +321,7 @@ class Agent:
         return f"Agent({self.name}, loc={self.location}, res={self.resource})"
 
     def _build_action_instruction(self) -> str:
-        resource = self.scenario.get("resource", {})
-        location_list = " / ".join(
-            loc.get("name") for loc in self.scenario.get("locations", []) if loc.get("name")
-        )
-        extraction_action = resource.get(
-            "resource_extraction_action", "CLAIM"
-        ).upper()
-        return ACTION_INSTRUCTION_TEMPLATE.format(
-            location_list=location_list,
-            resource_name=resource.get("name", "resource"),
-            resource_unit=resource.get("unit", "units"),
-            resource_location=resource.get("location", "the depot"),
-            extraction_action=extraction_action,
-        )
+        return ACTION_INSTRUCTION_TEMPLATE
 
     @staticmethod
     def _extract_action_line(raw_response: str) -> str:

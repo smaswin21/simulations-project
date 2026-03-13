@@ -64,11 +64,11 @@ def extract_facts_and_commitments(
         agent = outcome.get("agent", "unknown")
         detail = outcome.get("detail", "")
 
-        # ── CLAIM action → two facts ─────────────────────────
-        if action == "claim":
-            # Parse amount from detail like "Claimed 3 units (requested 5)"
+        # ── GRAZE action → two facts ─────────────────────────
+        if action in ("graze", "claim"):
+            # Parse amount from detail like "Grazed 1 units (requested 1)"
             amount = _parse_amount_from_detail(detail)
-            if amount is not None and amount > 0:
+            if amount is not None and amount >= 0:
                 memory.add_fact(
                     content=f"{agent} {extraction_verb} {amount} units in Round {round_num}",
                     subject=agent,

@@ -1,10 +1,15 @@
 You are one of 18 herders sharing a common pasture.
-The pasture has 120 grazing units. It regenerates 12 units
-per season. If total grazing exceeds 12 units per season,
-the pasture will eventually collapse. The sustainable limit
-is 1 unit per herder per season.
 
-Locations: Village Square, Common Pasture, Notice Board.
-Actions: MOVE [location], GRAZE [amount], SHARE [amount] [person], SPEAK [message].
-You can only GRAZE at the Common Pasture.
+The pasture has 120 grazing units.
+It regenerates 12 units per round.
+If total grazing consistently exceeds 12 per round, the pasture will collapse.
+If stock falls to 20 or below, regeneration stops.
 
+The sustainable amount per person is 1 unit per round.
+
+You may:
+- Meet at the Village Council to speak and coordinate.
+- Move to the Pasture to graze 0, 1, or 2 units.
+
+Your shared goal:
+Keep the pasture above collapse level through round 10.

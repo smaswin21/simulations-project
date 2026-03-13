@@ -67,10 +67,12 @@ def parse_action(
         if agent_location != resource_location:
             return result  # can't extract unless at resource location
         amount = _find_number(command + " " + content)
-        if amount and amount > 0:
-            result["type"] = "claim"
-            result["amount"] = amount
-            result["content"] = content
+        if amount is None:
+            amount = 1  # default to 1 if no number given
+        amount = max(0, min(2, amount))  # clamp to {0, 1, 2}
+        result["type"] = "graze"
+        result["amount"] = amount
+        result["content"] = content
 
     elif command.startswith("SHARE"):
         amount = _find_number(command)
