@@ -78,10 +78,12 @@ def build_resource_graph(rounds: list) -> nx.DiGraph:
             action = outcome['action']
             detail = outcome['detail']
 
-            if action == 'claim' and 'Claimed' in detail:
-                # "Claimed X units" -> DEPOT -> agent
-                amount = int(detail.split()[1])
-                flows[('DEPOT', agent)] += amount
+            if action in ('claim', 'graze') and ('Claimed' in detail or 'Grazed' in detail):
+                # "Claimed/Grazed X units (requested Y)" -> DEPOT -> agent
+                import re as _re
+                m = _re.search(r'(\d+)', detail)
+                if m:
+                    flows[('DEPOT', agent)] += int(m.group(1))
 
             elif action == 'share' and 'Shared' in detail:
                 # "Shared X units with Y" -> agent -> Y

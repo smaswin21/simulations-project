@@ -69,6 +69,10 @@ class MetricsCollector:
         self.cooperation_rate_over_time: list[float] = []
         self.resource_stock_over_time: list[int] = []
 
+        # Speech quality tracking
+        self.speech_diversity_over_time: list[float] = []   # unique / total speech acts
+        self.numeric_grounding_over_time: list[float] = []  # fraction mentioning a number
+
     def update_round(
         self,
         round_num: int,
@@ -118,6 +122,18 @@ class MetricsCollector:
         self.accountability_events += round_accountability
         self.total_speech_acts += round_speech
         self.accountability_over_time.append(round_accountability)
+
+        # ── Speech quality ───────────────────────────────────
+        round_speeches = [o["detail"] for o in outcomes if o.get("action") == "speak"]
+        if round_speeches:
+            self.speech_diversity_over_time.append(
+                len(set(round_speeches)) / len(round_speeches)
+            )
+            with_number = sum(1 for s in round_speeches if any(c.isdigit() for c in s))
+            self.numeric_grounding_over_time.append(with_number / len(round_speeches))
+        else:
+            self.speech_diversity_over_time.append(1.0)
+            self.numeric_grounding_over_time.append(0.0)
 
     def update_cooperation_rate(
         self,
@@ -169,6 +185,8 @@ class MetricsCollector:
             "accountability_over_time": self.accountability_over_time,
             "cooperation_rate_over_time": self.cooperation_rate_over_time,
             "resource_stock_over_time": self.resource_stock_over_time,
+            "speech_diversity_over_time": self.speech_diversity_over_time,
+            "numeric_grounding_over_time": self.numeric_grounding_over_time,
             "gini_final": gini_final,
             "accountability_events": self.accountability_events,
             "total_speech_acts": self.total_speech_acts,
@@ -180,5 +198,13 @@ class MetricsCollector:
             "resource_stock_final": (
                 self.resource_stock_over_time[-1]
                 if self.resource_stock_over_time else 0
+            ),
+            "speech_diversity_final": (
+                self.speech_diversity_over_time[-1]
+                if self.speech_diversity_over_time else 1.0
+            ),
+            "numeric_grounding_final": (
+                self.numeric_grounding_over_time[-1]
+                if self.numeric_grounding_over_time else 0.0
             ),
         }

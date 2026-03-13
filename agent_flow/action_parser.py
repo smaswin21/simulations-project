@@ -86,7 +86,7 @@ def parse_action(
     return result
 
 
-# ── Helpers ──────────────────────────────────────────────────
+#  Helpers 
 
 def _find_number(text: str) -> int | None:
     """Find the first integer in a string."""

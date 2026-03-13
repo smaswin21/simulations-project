@@ -75,7 +75,7 @@ def main(output_path: str | None = None, tag: str = ""):
     print(f"Loaded {len(runs_a)} Condition A runs, {len(runs_b)} Condition B runs")
 
     # ── Plot 1: Gini over rounds ─────────────────────────────
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(3, 2, figsize=(14, 15))
 
     mean_a, std_a = compute_stats(runs_a, "gini_over_time")
     mean_b, std_b = compute_stats(runs_b, "gini_over_time")
@@ -155,6 +155,46 @@ def main(output_path: str | None = None, tag: str = ""):
     ax4.grid(True, alpha=0.3)
     ax4.set_ylim(bottom=0)
 
+    # ── Plot 5: Speech diversity over rounds (bottom-left) ───
+    mean_a5, std_a5 = compute_stats(runs_a, "speech_diversity_over_time")
+    mean_b5, std_b5 = compute_stats(runs_b, "speech_diversity_over_time")
+    rounds_a5 = np.arange(1, len(mean_a5) + 1)
+    rounds_b5 = np.arange(1, len(mean_b5) + 1)
+
+    ax5 = axes[2, 0]
+    if len(mean_a5) > 0:
+        ax5.plot(rounds_a5, mean_a5, "r-o", label="A: Memory OFF", markersize=4)
+        ax5.fill_between(rounds_a5, mean_a5 - std_a5, mean_a5 + std_a5, alpha=0.2, color="red")
+    if len(mean_b5) > 0:
+        ax5.plot(rounds_b5, mean_b5, "b-s", label="B: Memory ON", markersize=4)
+        ax5.fill_between(rounds_b5, mean_b5 - std_b5, mean_b5 + std_b5, alpha=0.2, color="blue")
+    ax5.set_xlabel("Round")
+    ax5.set_ylabel("Unique / Total Speech Acts")
+    ax5.set_title("Speech Diversity (1.0 = all unique, 0.0 = echo chamber)")
+    ax5.legend()
+    ax5.grid(True, alpha=0.3)
+    ax5.set_ylim(0, 1.05)
+
+    # ── Plot 6: Numeric grounding over rounds (bottom-right) ─
+    mean_a6, std_a6 = compute_stats(runs_a, "numeric_grounding_over_time")
+    mean_b6, std_b6 = compute_stats(runs_b, "numeric_grounding_over_time")
+    rounds_a6 = np.arange(1, len(mean_a6) + 1)
+    rounds_b6 = np.arange(1, len(mean_b6) + 1)
+
+    ax6 = axes[2, 1]
+    if len(mean_a6) > 0:
+        ax6.plot(rounds_a6, mean_a6, "r-o", label="A: Memory OFF", markersize=4)
+        ax6.fill_between(rounds_a6, mean_a6 - std_a6, mean_a6 + std_a6, alpha=0.2, color="red")
+    if len(mean_b6) > 0:
+        ax6.plot(rounds_b6, mean_b6, "b-s", label="B: Memory ON", markersize=4)
+        ax6.fill_between(rounds_b6, mean_b6 - std_b6, mean_b6 + std_b6, alpha=0.2, color="blue")
+    ax6.set_xlabel("Round")
+    ax6.set_ylabel("Fraction with a Number")
+    ax6.set_title("Numeric Grounding (agents citing stock/graze numbers)")
+    ax6.legend()
+    ax6.grid(True, alpha=0.3)
+    ax6.set_ylim(0, 1.05)
+
     plt.suptitle("Ablation Study: Memory ON vs OFF", fontsize=14, fontweight="bold")
     plt.tight_layout()
 
@@ -182,6 +222,10 @@ def main(output_path: str | None = None, tag: str = ""):
         if any(coop_rates):
             print(f"    Cooperation rate:    {np.mean(coop_rates):.3f} +/- {np.std(coop_rates):.3f}")
             print(f"    Final stock:         {np.mean(final_stocks):.1f} +/- {np.std(final_stocks):.1f}")
+        diversity = [r.get("speech_diversity_final", 1.0) for r in runs]
+        grounding = [r.get("numeric_grounding_final", 0.0) for r in runs]
+        print(f"    Speech diversity:    {np.mean(diversity):.3f} +/- {np.std(diversity):.3f}")
+        print(f"    Numeric grounding:   {np.mean(grounding):.3f} +/- {np.std(grounding):.3f}")
 
     print(f"\n{'='*50}\n")
 

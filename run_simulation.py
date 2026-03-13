@@ -95,7 +95,7 @@ async def main(num_rounds: int, scenario_dir: str):
     logger.log_config(profiles, {
         "num_rounds": num_rounds,
         "num_agents": len(agents),
-        "model": MODEL_NAME if USE_OLLAMA else "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-20250514",
         "scenario": scenario.get("simulation", {}).get("name"),
     })
 
