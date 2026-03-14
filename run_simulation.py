@@ -1,28 +1,25 @@
 """
 run_simulation.py — Entry point.
-
-Usage:
-    python run_simulation.py - entire simulation is run              
-    python run_simulation.py --rounds 5 
 """
 
-import asyncio
 import argparse
+import asyncio
 import importlib.util
+import random
 from pathlib import Path
 
-import anthropic
-from openai import AsyncOpenAI
-
-from config.config import NUM_ROUNDS, USE_OLLAMA, API_KEY, API_BASE, MODEL_NAME, ANTHROPIC_API_KEY
-from config.scenario_loader import load_scenario
-from agent_flow.agent import Agent
-from agent_flow.persona_generator import generate_persona_prompt
-from agent_flow.environment import Environment
-from config.orchestrator import Orchestrator
-from config.logger import Logger
-from agent_flow.embedding import get_embed_model
 import config.db as db
+from agent_flow.agent import Agent
+from agent_flow.embedding import get_embed_model
+from agent_flow.environment import Environment
+from agent_flow.persona_generator import generate_persona_prompt
+from config.config import DEFAULT_SEED, NUM_ROUNDS
+from config.llms import create_provider
+from config.logger import Logger
+from config.orchestrator import Orchestrator
+from config.scenario_loader import load_scenario
+
+ROLE_POOL = ["Herder"] * 7 + ["Regulator"] * 2 + ["Scout"]
 
 
 def _get_start_location(scenario: dict) -> str:
@@ -32,20 +29,12 @@ def _get_start_location(scenario: dict) -> str:
     locations = scenario.get("locations", [])
     if locations:
         return locations[0].get("name")
-    return "Village Square"
-
-
-def _resolve_rules_path(scenario_dir: str):
-    base = Path(scenario_dir)
-    rules_path = base / "rules.py"
-    if rules_path.exists():
-        return rules_path
-    return None
+    return "Village Council"
 
 
 def _load_rules(scenario_dir: str):
-    rules_path = _resolve_rules_path(scenario_dir)
-    if not rules_path:
+    rules_path = Path(scenario_dir) / "rules.py"
+    if not rules_path.exists():
         return None
     module_name = f"scenario_rules_{rules_path.stem}"
     spec = importlib.util.spec_from_file_location(module_name, rules_path)
@@ -56,63 +45,85 @@ def _load_rules(scenario_dir: str):
     return module
 
 
-async def main(num_rounds: int, scenario_dir: str):
+def assign_roles(profiles: list[dict], seed: int, count: int) -> list[tuple[dict, str]]:
+    selected = profiles[:count]
+    roles = ROLE_POOL[:count]
+    rng = random.Random(seed)
+    rng.shuffle(roles)
+    return list(zip(selected, roles))
+
+
+async def main(num_rounds: int, scenario_dir: str, seed: int):
     scenario = load_scenario(scenario_dir)
     scenario["start_location"] = _get_start_location(scenario)
     scenario["rules"] = _load_rules(scenario_dir)
+    scenario["seed"] = seed
 
-    # --- 0. Initialize embedding model once (shared across all agents) ---
     get_embed_model()
 
-    # --- 1. Load agent profiles --- 
     profiles = db.load_profiles()
+    agent_count = scenario.get("agents", {}).get("count", len(ROLE_POOL))
+    role_assignments = assign_roles(profiles, seed=seed, count=agent_count)
+    provider = create_provider()
 
-    agent_count = scenario.get("agents", {}).get("count")
-    if agent_count and len(profiles) > agent_count:
-        profiles = profiles[:agent_count]
-
-    print(f"Loaded {len(profiles)} agent profiles.")
-
-    # --- 2. Generate persona prompts --- 
     agents = []
-    for profile in profiles:
-        persona = generate_persona_prompt(profile, scenario)
-        agent = Agent(profile, persona, scenario)
+    for profile, role in role_assignments:
+        persona = generate_persona_prompt(profile, scenario, role)
+        agent = Agent(
+            profile=profile,
+            persona_prompt=persona,
+            scenario=scenario,
+            role=role,
+            llm_provider=provider,
+            seed_context={"seed": seed},
+        )
         agents.append(agent)
-        # Uncomment to inspect a persona:
-        # print(f"\n--- {agent.name} ---\n{persona}\n")
 
-    # --- 3. Build the world --- 
     env = Environment(agents, scenario)
     logger = Logger()
 
-    if USE_OLLAMA:
-        client = AsyncOpenAI(base_url=API_BASE, api_key=API_KEY)
-    else:
-        client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+    logger.log_config(
+        profiles=[{**profile, "role": role} for profile, role in role_assignments],
+        settings={
+            "num_rounds": num_rounds,
+            "num_agents": len(agents),
+            "seed": seed,
+            "llm_provider": provider.settings.provider,
+            "llm_model": provider.settings.model,
+            "scenario": scenario.get("simulation", {}).get("name"),
+        },
+    )
 
-    # Log config
-    logger.log_config(profiles, {
-        "num_rounds": num_rounds,
-        "num_agents": len(agents),
-        "model": "claude-sonnet-4-20250514",
-        "scenario": scenario.get("simulation", {}).get("name"),
-    })
-
-    # --- 4. Run --- 
-    orch = Orchestrator(agents, env, logger, client, scenario)
+    orch = Orchestrator(
+        agents=agents,
+        environment=env,
+        logger=logger,
+        llm_provider=provider,
+        scenario=scenario,
+        seed=seed,
+    )
     await orch.run_simulation(num_rounds)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rounds", type=int, default=NUM_ROUNDS,
-                        help="Number of simulation rounds (default: 25)")
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=NUM_ROUNDS,
+        help="Number of simulation rounds",
+    )
     parser.add_argument(
         "--scenario",
         type=str,
         default="simulations/tragedy_of_commons",
         help="Path to scenario directory",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        help="Random seed used for reproducible role assignment",
+    )
     args = parser.parse_args()
-    asyncio.run(main(args.rounds, args.scenario))
+    asyncio.run(main(args.rounds, args.scenario, args.seed))

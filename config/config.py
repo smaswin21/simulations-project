@@ -1,46 +1,68 @@
 """
-config.py — Simulation settings in one place.
+config.py — Central simulation and model settings.
 """
 
 import os
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
-# --- LLM Settings --- 
-USE_OLLAMA = True 
 
-# Ollama settings
-MODEL_NAME = "llama3.2:1b"  # 1B params - fast and local
-API_BASE = "http://localhost:11434/v1"
-API_KEY = "ollama" 
+def _get_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
-# Anthropic settings 
-ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
+
+# --- LLM provider settings ---
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mistral").strip().lower()
+LLM_MODEL = os.getenv("LLM_MODEL", "llama3.2:1b").strip()
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").strip()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-TEMPERATURE = 0.7
-MAX_TOKENS = 400
-MAX_CONCURRENT_AGENTS = 5
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
+OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434/v1").strip()
 
-# --- Embedding / Memory Retrieval Settings (Phase 3) ---
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"   # 384-dim, ~80 MB, CPU-friendly
-EMBEDDING_DIM = 384
-RECENCY_DECAY = 0.15                    # exp(-RECENCY_DECAY * rounds_ago)
-RETRIEVAL_TOP_K = 7                     # memories injected per LLM call
+# Useful aliases for local-first runs. Mistral uses the OpenAI-compatible
+# Ollama endpoint in this project.
+MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", OLLAMA_API_BASE).strip()
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "ollama")
 
-# --- Contradiction Detection & Graph Expansion (Phase 4) ---
-COSINE_CONTRADICT_THRESHOLD = 0.30      # below this → flag as contradiction
-CONTRADICTION_BONUS = 1.5               # score multiplier for nodes with CONTRADICTS edge
-BROKEN_COMMIT_BONUS = 1.3               # score multiplier for broken commitments
-EXPANSION_BONUS = 1.1                   # score multiplier for nodes pulled via one-hop expansion
-COMMITMENT_KEPT_ROUNDS = 2              # rounds without contradiction before marking "kept"
-USE_LLM_CONTRADICTION = False           # True = add LLM-based contradiction check (expensive)
+# Legacy compatibility flags retained for older scripts.
+USE_OLLAMA = LLM_PROVIDER == "mistral"
+API_BASE = OLLAMA_API_BASE
+API_KEY = MISTRAL_API_KEY
+MODEL_NAME = LLM_MODEL
+ANTHROPIC_MODEL = LLM_MODEL
 
-# --- Phase 5: Ablation toggle ---
-USE_LAYER2_MEMORY = True   # False = Condition A (no memory), True = Condition B (memory ON)
+TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.4"))
+MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "450"))
+MAX_CONCURRENT_AGENTS = int(os.getenv("MAX_CONCURRENT_AGENTS", "5"))
 
-# --- Settings ---
-NUM_ROUNDS = 15
+# --- Embedding / Memory Retrieval Settings ---
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "384"))
+RECENCY_DECAY = float(os.getenv("RECENCY_DECAY", "0.15"))
+RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "7"))
+BELIEF_ALIGNMENT_BOOST = float(os.getenv("BELIEF_ALIGNMENT_BOOST", "1.5"))
 
-# Past rounds of speech to display in each agent's perception
-SPEECH_HISTORY_ROUNDS = 2
+# --- Contradiction Detection ---
+COSINE_CONTRADICT_THRESHOLD = float(
+    os.getenv("COSINE_CONTRADICT_THRESHOLD", "0.30")
+)
+CONTRADICTION_BONUS = float(os.getenv("CONTRADICTION_BONUS", "1.5"))
+EXPANSION_BONUS = float(os.getenv("EXPANSION_BONUS", "1.1"))
+USE_LLM_CONTRADICTION = _get_bool("USE_LLM_CONTRADICTION", False)
+
+# --- Memory toggle for ablations ---
+USE_LAYER2_MEMORY = _get_bool("USE_LAYER2_MEMORY", True)
+
+# --- Simulation settings ---
+DEFAULT_SEED = int(os.getenv("SIMULATION_SEED", "42"))
+NUM_ROUNDS = int(os.getenv("NUM_ROUNDS", "15"))
+SPEECH_HISTORY_ROUNDS = int(os.getenv("SPEECH_HISTORY_ROUNDS", "2"))

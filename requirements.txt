@@ -8,5 +8,5 @@ pymongo
 python-dotenv
 pyyaml
 sentence-transformers
-uvicorn[standard]
 ollama
+huggingface-hub

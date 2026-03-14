@@ -1,50 +1,30 @@
 """
-environment.py — The simulation world.
-
-Manages locations, resources, speech logs,
-and generates what each agent can perceive each round.
-
-Uses a NetworkX DiGraph to represent the world:
-- Nodes: locations, agents, objects (resource depot)
-- Edges: LOCATED_AT, CONTAINS
-- Node attributes: agent state (resource), location state
+environment.py — The commons environment for the heterogeneous MASTOC run.
 """
+
+from __future__ import annotations
 
 from typing import Optional
 
 import networkx as nx
 
-from config.config import SPEECH_HISTORY_ROUNDS, NUM_ROUNDS
+from config.config import NUM_ROUNDS, SPEECH_HISTORY_ROUNDS
 
 LOCATED_AT = "LOCATED_AT"
 CONTAINS = "CONTAINS"
-HAS_STATE = "HAS_STATE"
 
 
 def _get_act(round_number: int, config: dict | None = None) -> tuple[str, str]:
-    """Return (act_label, act_description) for the given round."""
-    acts_config = None
-    if config:
-        acts_config = config.get("acts")
-
+    acts_config = config.get("acts") if config else None
     if acts_config:
         for act in acts_config:
-            start = act.get("start_round", 0)
-            end = act.get("end_round", 0)
-            label = act.get("label", "?")
-            name = act.get("name", "Unknown")
-            if start <= round_number <= end:
-                return label, name
+            if act.get("start_round", 0) <= round_number <= act.get("end_round", 0):
+                return act.get("label", "?"), act.get("name", "Unknown")
     return "?", "Unknown"
 
 
 class Environment:
     def __init__(self, agents, config: dict):
-        """
-        Args:
-            agents: list of Agent objects
-            config: scenario configuration dict
-        """
         self.config = config
         self.graph = nx.DiGraph()
         self.agents = {a.name: a for a in agents}
@@ -55,89 +35,62 @@ class Environment:
         self.resource = config.get("resource", {})
         self.resource_name = self.resource.get("name", "resource")
         self.resource_unit = self.resource.get("unit", "units")
-        self.resource_location = self.resource.get("location")
+        self.resource_location = self.resource.get("location", "Pasture")
         self.resource_supply = int(self.resource.get("initial_supply", 0))
         self.start_location = _get_start_location(config)
+        self.commons_config = config.get("commons", {})
+        self.current_regeneration_rate = int(
+            self.commons_config.get("regeneration_per_round", 12)
+        )
+        self.collapse_threshold = int(self.commons_config.get("collapse_threshold", 20))
+        self.max_stock = int(self.commons_config.get("max_stock", self.resource_supply))
 
-        # ── Build graph ──────────────────────────────────────
         self.graph.add_node("resource_depot", type="object", amount=self.resource_supply)
         for loc in self.locations:
             self.graph.add_node(loc, type="location")
 
-        for a in agents:
-            self.graph.add_node(
-                a.name,
-                type="agent",
-                resource=0,
-            )
-            self.graph.add_edge(a.name, self.start_location, relation=LOCATED_AT)
-            self.graph.add_edge(self.start_location, a.name, relation=CONTAINS)
-            a.location = self.start_location
+        for agent in agents:
+            self.graph.add_node(agent.name, type="agent", resource=0, role=agent.role)
+            self.graph.add_edge(agent.name, self.start_location, relation=LOCATED_AT)
+            self.graph.add_edge(self.start_location, agent.name, relation=CONTAINS)
+            agent.location = self.start_location
 
-        self.speech_log: dict[str, list] = {loc: [] for loc in self.locations}
-
-        # ── Harvest tracking (for cooperation metrics) ───────
+        self.speech_log: dict[str, list[tuple[int, str, str]]] = {loc: [] for loc in self.locations}
         self.round_harvest_actions: list[dict] = []
         self.cumulative_harvest: dict[str, int] = {a.name: 0 for a in agents}
-        self._last_round_total_grazed: int = 0
-
-    # ── Graph accessors ──────────────────────────────────────
+        self._last_round_total_grazed = 0
+        self._pending_sanctions: list[dict] = []
+        self._last_report_data: dict | None = None
 
     def _get_location(self, agent_name: str) -> Optional[str]:
-        """Get agent's current location via graph traversal."""
         for neighbor in self.graph.successors(agent_name):
             if self.graph.edges[agent_name, neighbor].get("relation") == LOCATED_AT:
                 return neighbor
         return None
 
     def _set_location(self, agent_name: str, new_location: str):
-        """Update agent's location via graph edge changes."""
         old_location = self._get_location(agent_name)
         if old_location:
             self.graph.remove_edge(agent_name, old_location)
             self.graph.remove_edge(old_location, agent_name)
-
         self.graph.add_edge(agent_name, new_location, relation=LOCATED_AT)
         self.graph.add_edge(new_location, agent_name, relation=CONTAINS)
         self.agents[agent_name].location = new_location
 
     def _get_resource(self, agent_name: str) -> int:
-        """Get agent's resource count from node attribute."""
         return self.graph.nodes[agent_name].get("resource", 0)
 
     def _set_resource(self, agent_name: str, amount: int):
-        """Set agent's resource count via node attribute."""
         self.graph.nodes[agent_name]["resource"] = amount
         self.agents[agent_name].resource = amount
 
     def _get_depot_resource(self) -> int:
-        """Get depot resource count."""
         return self.graph.nodes["resource_depot"].get("amount", 0)
 
     def _set_depot_resource(self, amount: int):
-        """Set depot resource count."""
-        self.graph.nodes["resource_depot"]["amount"] = amount
-
-    # ── Commons pool resource methods ────────────────────────
-
-    def get_resource(self, resource_name: str) -> dict:
-        """Get stock for a named resource (commons pool).
-
-        For now, all resources map to the single resource_depot node.
-        """
-        return {"stock": self._get_depot_resource()}
-
-    def deduct_resource(self, resource_name: str, amount: int):
-        """Deduct from a named resource pool."""
-        current = self._get_depot_resource()
-        self._set_depot_resource(max(0, current - amount))
-
-    def set_resource_stock(self, resource_name: str, amount: int):
-        """Set the stock level for a named resource."""
-        self._set_depot_resource(amount)
+        self.graph.nodes["resource_depot"]["amount"] = max(0, amount)
 
     def _agents_at_location(self, location: str) -> list[str]:
-        """Get list of agent names at a location via graph traversal."""
         agents = []
         for node in self.graph.successors(location):
             if self.graph.edges[location, node].get("relation") == CONTAINS:
@@ -145,76 +98,68 @@ class Environment:
         return agents
 
     def calculate_gini(self) -> float:
-        """Calculate Gini coefficient of resource distribution among agents."""
-        resources = sorted(
+        values = sorted(
             self._get_resource(name)
             for name, data in self.graph.nodes(data=True)
             if data.get("type") == "agent"
         )
-        n = len(resources)
-        if n == 0 or sum(resources) == 0:
+        n = len(values)
+        if n == 0 or sum(values) == 0:
             return 0.0
         cumulative = 0.0
-        for i, x in enumerate(resources):
-            cumulative += (2 * (i + 1) - n - 1) * x
-        return cumulative / (n * sum(resources))
+        for idx, value in enumerate(values, start=1):
+            cumulative += (2 * idx - n - 1) * value
+        return cumulative / (n * sum(values))
 
-    # ── Condensed reminder (shown rounds 2+) ─────────────────
-
-    def _build_condensed_reminder(self) -> str:
-        """Short reminder of key mechanics for rounds after the first."""
-        return (
-            "REMINDER: Village Council = SPEAK or MOVE. "
-            "Pasture = GRAZE [0|1|2] or MOVE. "
-            "You must MOVE to the Pasture before you can GRAZE."
-        )
-
-    # ── Perception ───────────────────────────────────────────
+    def apply_pending_sanctions(self) -> list[str]:
+        if not self._pending_sanctions:
+            return []
+        messages = []
+        remaining = []
+        for sanction in self._pending_sanctions:
+            if sanction["round_due"] != self.round_number:
+                remaining.append(sanction)
+                continue
+            target = sanction["target"]
+            current = self._get_resource(target)
+            penalty = min(2, current)
+            self._set_resource(target, current - penalty)
+            messages.append(
+                f"Sanction enforced: {target} loses {penalty} units due to prior regulatory action."
+            )
+        self._pending_sanctions = remaining
+        return messages
 
     def generate_perception(self, agent) -> str:
-        """Build the text describing what this agent can currently observe."""
         parts = []
-
-        # Round + Act context
         act_label, act_desc = _get_act(self.round_number, self.config)
-        parts.append(
-            f"=== ROUND {self.round_number} of {self.max_rounds} "
-            f"(Act {act_label}: {act_desc}) ==="
-        )
+        parts.append(f"=== ROUND {self.round_number} of {self.max_rounds} (Act {act_label}: {act_desc}) ===")
 
-        # Scenario text (full on round 1, condensed after)
         if self.round_number == 1 and self.config.get("scenario_text"):
             parts.append(self.config["scenario_text"])
-        elif self.round_number > 1:
-            parts.append(self._build_condensed_reminder())
 
-        # Event messages for this round
         if self.round_messages:
             parts.extend(self.round_messages)
 
-        # Commons status
-        commons_config = self.config.get("commons", {})
         current_stock = self._get_depot_resource()
-        sustainable_quota = commons_config.get(
-            "suggested_quota_per_agent",
-            commons_config.get("default_sustainable_quota", 1),
-        )
-        regen_rate = commons_config.get("regeneration_per_round", 12)
-        collapse_threshold = commons_config.get("collapse_threshold", 20)
-        last_round_total = self._last_round_total_grazed
-
         parts.append("")
+        parts.append(f"ROLE: {agent.role}")
         parts.append("COMMONS STATUS:")
-        parts.append(f"  Pasture stock: {current_stock} units")
-        parts.append(f"  Last round total grazed: {last_round_total} units (by all herders)")
-        parts.append(f"  Regeneration rate: {regen_rate} units/round (if stock > {collapse_threshold})")
-        parts.append(f"  Suggested quota: {sustainable_quota} unit per herder per round")
-        if current_stock <= collapse_threshold:
-            parts.append(f"  !! COLLAPSED — regeneration stopped !!")
-        elif current_stock <= collapse_threshold * 2:
-            parts.append(f"  WARNING: Pasture critically low (collapses at {collapse_threshold})")
+        if agent.role == "Scout":
+            parts.append(f"  Exact stock: {current_stock} {self.resource_unit}")
+            parts.append(f"  Exact regeneration rate: {self.current_regeneration_rate} per round")
+            parts.append(f"  Last round total grazed: {self._last_round_total_grazed} units")
+        else:
+            parts.append(f"  Pasture condition: {self._qualitative_health(current_stock)}")
+            parts.append(f"  Grazing pressure last round: {self._qualitative_pressure(self._last_round_total_grazed)}")
+            parts.append("  You do not know the exact stock or regeneration numbers.")
 
-        # Location + others
+        if self._last_report_data and agent.role != "Scout":
+            parts.append(
+                "  Scout report remembered by the council: "
+                f"{self._last_report_data['message']}"
+            )
+
         others = self._others_at_location(agent)
         parts.append(f"\nLocation: {agent.location}")
         if others:
@@ -222,159 +167,235 @@ class Environment:
         else:
             parts.append("You are alone here.")
 
-        # Recent speech at this location
-        recent_speech = self._recent_speech(agent.location)
+        recent_speech = self._recent_speech("Village Council")
         if recent_speech:
-            parts.append("\nRECENT CONVERSATION:")
+            parts.append("\nRECENT COUNCIL MESSAGES:")
             for round_num, speaker, content in recent_speech:
                 parts.append(f"  [Round {round_num}] {speaker}: \"{content}\"")
 
-        # Agent's own status
-        agent_harvest = self.cumulative_harvest.get(agent.name, 0)
         parts.append("\nYOUR STATUS:")
         parts.append(f"  Units you hold: {agent.resource}")
-        parts.append(f"  Total grazed so far this simulation: {agent_harvest}")
-
+        parts.append(f"  Total personally grazed: {self.cumulative_harvest.get(agent.name, 0)}")
+        parts.append(f"  Allowed action family: {self._allowed_action_hint(agent.role)}")
         return "\n".join(parts)
 
-    # ── Action resolution ────────────────────────────────────
-
     def resolve_actions(self, actions: list[dict]) -> list[dict]:
-        """
-        Process all agent actions for one round.
-
-        Order: MOVE → GRAZE → SPEAK
-        Returns list of outcome dicts.
-        """
         self.round_harvest_actions = []
-        outcomes = []
+        outcomes: list[dict] = []
+        start_locations = {name: agent.location for name, agent in self.agents.items()}
 
-        # ── MOVE ─────────────────────────────────────────────
-        for a in actions:
-            if a["type"] == "move":
-                old_loc = self.agents[a["agent"]].location
-                self._set_location(a["agent"], a["target_location"])
-                outcomes.append({
-                    "agent": a["agent"],
+        for action in actions:
+            if action["type"] != "move":
+                continue
+            target = action.get("target_location")
+            if not target or target == self.agents[action["agent"]].location:
+                continue
+            old_location = self.agents[action["agent"]].location
+            self._set_location(action["agent"], target)
+            outcomes.append(
+                {
+                    "agent": action["agent"],
+                    "role": action["role"],
                     "action": "move",
-                    "detail": f"Moved from {old_loc} to {a['target_location']}",
-                })
+                    "detail": f"Moved from {old_location} to {target}",
+                }
+            )
 
-        # ── GRAZE (Pasture only) ──────────────────────────────
-        for a in actions:
-            if a["type"] in ("graze", "claim"):
-                agent_loc = self.agents[a["agent"]].location
-                if agent_loc != self.resource_location:
-                    outcomes.append({
-                        "agent": a["agent"],
-                        "action": "graze",
-                        "detail": "Cannot graze here — move to Pasture first",
-                    })
-                    continue
-                requested = max(0, min(2, a.get("amount") or 0))
-                depot = self._get_depot_resource()
-                given = min(requested, depot)
-                if given > 0:
-                    self._set_depot_resource(depot - given)
-                    self._set_resource(a["agent"], self._get_resource(a["agent"]) + given)
-                    self.round_harvest_actions.append({"agent": a["agent"], "amount": given})
-                    self.cumulative_harvest[a["agent"]] = (
-                        self.cumulative_harvest.get(a["agent"], 0) + given
-                    )
-                outcomes.append({
-                    "agent": a["agent"],
-                    "action": "graze",
-                    "detail": f"Grazed {given} units (requested {requested})",
-                })
-
-        # ── SPEAK (Village Council only) ──────────────────────
-        for a in actions:
-            if a["type"] == "speak":
-                agent_loc = self.agents[a["agent"]].location
-                council = self.locations[0] if self.locations else "Village Council"
-                if agent_loc != council:
-                    # Silently blocked — agent is at Pasture, can't speak there
-                    continue
-                self.speech_log[agent_loc].append(
-                    (self.round_number, a["agent"], a["content"])
+        for action in actions:
+            if action["type"] != "graze":
+                continue
+            if action["role"] != "Herder":
+                outcomes.append(
+                    {
+                        "agent": action["agent"],
+                        "role": action["role"],
+                        "action": "wait",
+                        "detail": "Only herders may graze.",
+                    }
                 )
-                outcomes.append({
-                    "agent": a["agent"],
-                    "action": "speak",
-                    "detail": a["content"][:200],
-                })
+                continue
+            if self.agents[action["agent"]].location != self.resource_location:
+                outcomes.append(
+                    {
+                        "agent": action["agent"],
+                        "role": action["role"],
+                        "action": "wait",
+                        "detail": "Cannot graze here — move to Pasture first.",
+                    }
+                )
+                continue
+            requested = max(0, min(2, action.get("amount") or 0))
+            depot = self._get_depot_resource()
+            given = min(requested, depot)
+            self._set_depot_resource(depot - given)
+            self._set_resource(action["agent"], self._get_resource(action["agent"]) + given)
+            self.round_harvest_actions.append({"agent": action["agent"], "amount": given})
+            self.cumulative_harvest[action["agent"]] = self.cumulative_harvest.get(action["agent"], 0) + given
+            mode = "sustainable" if requested <= 1 else "aggressive"
+            outcomes.append(
+                {
+                    "agent": action["agent"],
+                    "role": action["role"],
+                    "action": "graze",
+                    "detail": f"Grazed {given} units via {mode} harvest",
+                }
+            )
 
-        # Track total grazed this round for next round's perception
-        self._last_round_total_grazed = sum(h["amount"] for h in self.round_harvest_actions)
+        for action in actions:
+            if action["type"] != "sanction":
+                continue
+            if action["role"] != "Regulator":
+                outcomes.append(
+                    {
+                        "agent": action["agent"],
+                        "role": action["role"],
+                        "action": "wait",
+                        "detail": "Only regulators may sanction.",
+                    }
+                )
+                continue
+            target = action.get("target_agent")
+            if not target or self.agents[target].role != "Herder":
+                outcomes.append(
+                    {
+                        "agent": action["agent"],
+                        "role": action["role"],
+                        "action": "wait",
+                        "detail": "Sanction failed — target must be a herder.",
+                    }
+                )
+                continue
+            self._pending_sanctions.append(
+                {"target": target, "round_due": self.round_number + 1, "issued_by": action["agent"]}
+            )
+            outcomes.append(
+                {
+                    "agent": action["agent"],
+                    "role": action["role"],
+                    "action": "sanction",
+                    "detail": f"Queued sanction against {target} for next round.",
+                }
+            )
 
+        for action in actions:
+            if action["type"] != "report":
+                continue
+            stock = self._get_depot_resource()
+            report_message = (
+                f"Scout ecological report: stock={stock} units, "
+                f"regeneration={self.current_regeneration_rate}, "
+                f"last_round_grazed={self._last_round_total_grazed}"
+            )
+            self._last_report_data = {
+                "round": self.round_number,
+                "stock": stock,
+                "regeneration_rate": self.current_regeneration_rate,
+                "message": report_message,
+            }
+            self.speech_log["Village Council"].append(
+                (self.round_number, action["agent"], report_message)
+            )
+            outcomes.append(
+                {
+                    "agent": action["agent"],
+                    "role": action["role"],
+                    "action": "report",
+                    "detail": report_message,
+                }
+            )
+
+        for action in actions:
+            message = (action.get("message") or "").strip()
+            if not message or message.upper() == "NONE":
+                continue
+            if start_locations.get(action["agent"]) != "Village Council":
+                continue
+            self.speech_log["Village Council"].append(
+                (self.round_number, action["agent"], message)
+            )
+            outcomes.append(
+                {
+                    "agent": action["agent"],
+                    "role": action["role"],
+                    "action": "message",
+                    "detail": message[:200],
+                }
+            )
+
+        self._last_round_total_grazed = sum(item["amount"] for item in self.round_harvest_actions)
         return outcomes
-
-    # ── State mutators (used by events/rules) ────────────────
 
     def set_round_messages(self, messages: list[str]) -> None:
         self.round_messages = messages
 
     def add_resource(self, amount: int):
-        """Add resource to the depot (used by events)."""
-        current = self._get_depot_resource()
-        self._set_depot_resource(current + amount)
+        self._set_depot_resource(self._get_depot_resource() + amount)
 
     def get_world_state(self) -> dict:
-        """Full world snapshot for logging."""
         locations = {}
         for loc in self.locations:
-            agents_here = self._agents_at_location(loc)
-            locations[loc] = agents_here
-
+            locations[loc] = self._agents_at_location(loc)
         return {
             "round": self.round_number,
             "resource_depot": self._get_depot_resource(),
+            "regeneration_rate": self.current_regeneration_rate,
             "locations": locations,
             "inventories": {a.name: self._get_resource(a.name) for a in self.agents.values()},
+            "roles": {a.name: a.role for a in self.agents.values()},
             "gini": self.calculate_gini(),
         }
 
-    def __others_at_location(self, agent) -> list[str]:
-        """Names of other agents at the same location."""
+    def _others_at_location(self, agent) -> list[str]:
         location = self._get_location(agent.name)
         if not location:
             return []
-        others = self._agents_at_location(location)
-        return [a for a in others if a != agent.name]
+        return [name for name in self._agents_at_location(location) if name != agent.name]
 
-    def _others_at_location(self, agent) -> list[str]:
-        """Names of other agents at the same location."""
-        return self.__others_at_location(agent)
-
-    def _recent_speech(self, location: str) -> list:
-        """Get speech at this location from the last N rounds."""
+    def _recent_speech(self, location: str) -> list[tuple[int, str, str]]:
         cutoff = self.round_number - SPEECH_HISTORY_ROUNDS
         return [
-            (r, speaker, content)
-            for r, speaker, content in self.speech_log[location]
-            if r > cutoff
+            (round_num, speaker, content)
+            for round_num, speaker, content in self.speech_log[location]
+            if round_num > cutoff
         ]
 
     @property
     def resource_depot(self) -> int:
-        """Generic resource depot count."""
         return self._get_depot_resource()
 
     def get_agents_at_location(self, location: str, exclude: str | None = None) -> set[str]:
-        """Return the set of agent names currently at the given location.
-
-        Args:
-            location: location name to query
-            exclude: optional agent name to exclude (typically the querying agent)
-
-        Returns:
-            Set of agent names at that location (excluding *exclude* if given).
-        """
-        result = {
+        return {
             name for name, agent in self.agents.items()
             if agent.location == location and name != exclude
         }
-        return result
+
+    @staticmethod
+    def _qualitative_health(stock: int) -> str:
+        if stock <= 20:
+            return "collapsed and brown"
+        if stock <= 40:
+            return "fragile and thinning"
+        if stock <= 80:
+            return "stressed but still recovering"
+        return "lush and resilient"
+
+    @staticmethod
+    def _qualitative_pressure(total_grazed: int) -> str:
+        if total_grazed >= 12:
+            return "heavy"
+        if total_grazed >= 6:
+            return "moderate"
+        if total_grazed > 0:
+            return "light"
+        return "minimal"
+
+    @staticmethod
+    def _allowed_action_hint(role: str) -> str:
+        if role == "Herder":
+            return "move, message, graze, wait"
+        if role == "Regulator":
+            return "move, message, sanction, wait"
+        return "move, message, report_data, wait"
 
 
 def _get_start_location(config: dict) -> str:
@@ -384,4 +405,4 @@ def _get_start_location(config: dict) -> str:
     locations = config.get("locations", [])
     if locations:
         return locations[0].get("name")
-    return "Village Square"
+    return "Village Council"

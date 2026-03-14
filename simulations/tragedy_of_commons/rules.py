@@ -1,18 +1,28 @@
 """
-rules.py — Event handlers for the Tragedy of the Commons scenario.
+rules.py — Commons regeneration logic for the heterogeneous MASTOC scenario.
 """
 
+
 def apply_round_events(environment, round_number, config):
-    stock = environment._get_depot_resource()
     commons = config.get("commons", {})
-    max_stock = commons.get("max_stock", 120)
+    stock = environment._get_depot_resource()
     collapse_threshold = commons.get("collapse_threshold", 20)
+    max_stock = commons.get("max_stock", 120)
+    base_regeneration = commons.get("regeneration_per_round", 12)
+
+    messages = []
     if round_number > 1:
         if stock <= collapse_threshold:
-            return [
-                f"The pasture has collapsed (stock={stock} units). "
-                f"Regeneration is suspended until stock recovers above {collapse_threshold}."
-            ]
-        new_stock = min(stock + 12, max_stock)
-        environment._set_depot_resource(new_stock)
-    return []
+            environment.current_regeneration_rate = 0
+            messages.append(
+                f"The pasture has collapsed (stock={stock} units). Regeneration is suspended."
+            )
+        else:
+            environment.current_regeneration_rate = base_regeneration
+            new_stock = min(stock + environment.current_regeneration_rate, max_stock)
+            environment._set_depot_resource(new_stock)
+            messages.append(
+                f"The pasture regenerates by {environment.current_regeneration_rate} units."
+            )
+
+    return messages

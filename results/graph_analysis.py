@@ -78,19 +78,17 @@ def build_resource_graph(rounds: list) -> nx.DiGraph:
             action = outcome['action']
             detail = outcome['detail']
 
-            if action in ('claim', 'graze') and ('Claimed' in detail or 'Grazed' in detail):
-                # "Claimed/Grazed X units (requested Y)" -> DEPOT -> agent
+            if action == 'graze' and 'Grazed' in detail:
                 import re as _re
                 m = _re.search(r'(\d+)', detail)
                 if m:
                     flows[('DEPOT', agent)] += int(m.group(1))
 
-            elif action == 'share' and 'Shared' in detail:
-                # "Shared X units with Y" -> agent -> Y
-                parts = detail.split()
-                amount = int(parts[1])
-                recipient = parts[4]
-                flows[(agent, recipient)] += amount
+            elif action == 'sanction' and 'against' in detail:
+                import re as _re
+                match = _re.search(r'against\s+([A-Za-z]+)', detail)
+                if match:
+                    flows[(agent, match.group(1))] += 2
 
     # Add edges
     G.add_node('DEPOT')
@@ -135,7 +133,7 @@ def analyze_graphs(social_G, resource_G, rounds, final_summary):
     metrics['mean_resource'] = np.mean(resource_values)
     metrics['std_resource'] = np.std(resource_values)
 
-    # Who claimed and shared
+    # Who harvested and sanctioned
     claimed = defaultdict(int)
     shared = defaultdict(int)
 
@@ -333,7 +331,7 @@ def main():
     for name, deg in metrics['most_social']:
         print(f"    {name}: {deg}")
     if metrics['top_sharers']:
-        print(f"\n  Top sharers (share/claim ratio):")
+        print(f"\n  Top sanctioners (sanction/harvest ratio):")
         for name, ratio in metrics['top_sharers']:
             print(f"    {name}: {ratio:.2f}")
 
