@@ -41,6 +41,25 @@ Rules:
   - MESSAGE must be plain text, not JSON.
 """.strip()
 
+MEMORY_ACTION_GUIDANCE = (
+    "Use retrieved beliefs to avoid repeat unfairness and protect the commons when choosing your action."
+)
+
+ROLE_MEMORY_GUIDANCE = {
+    "Herder": (
+        "Herder rule: if retrieved beliefs suggest unfair extraction or low commons health, "
+        "prefer GRAZE_SUSTAINABLE over GRAZE_AGGRESSIVE."
+    ),
+    "Regulator": (
+        "Regulator rule: if retrieved beliefs repeatedly point to the same unfair actor, "
+        "prefer SANCTION <agent_name>."
+    ),
+    "Scout": (
+        "Scout rule: if stock or commons health appears fragile and unfair extraction is remembered, "
+        "prefer REPORT_DATA."
+    ),
+}
+
 
 class Agent:
     def __init__(
@@ -102,14 +121,15 @@ class Agent:
         else:
             memory_block, retrieved_labels = "", []
 
-        parts = [perception, f"PRIVATE REFLECTION:\n{reflection}"]
-        if memory_block:
-            parts.extend(["", memory_block])
-        parts.extend(["", ACTION_TEMPLATE])
+        action_prompt = self._build_action_prompt(
+            perception=perception,
+            reflection=reflection,
+            memory_block=memory_block,
+        )
 
         final_raw = await self.llm_provider.generate(
             system_prompt=self.persona_prompt,
-            user_prompt="\n".join(parts),
+            user_prompt=action_prompt,
             max_tokens=cfg.MAX_TOKENS,
             temperature=cfg.TEMPERATURE,
         )
@@ -131,6 +151,24 @@ class Agent:
 
     def __repr__(self):
         return f"Agent({self.name}, role={self.role}, loc={self.location}, res={self.resource})"
+
+    def _build_action_prompt(
+        self,
+        perception: str,
+        reflection: str,
+        memory_block: str,
+    ) -> str:
+        parts = [perception, f"PRIVATE REFLECTION:\n{reflection}"]
+
+        if cfg.USE_LAYER2_MEMORY and memory_block:
+            guidance_lines = [MEMORY_ACTION_GUIDANCE]
+            role_rule = ROLE_MEMORY_GUIDANCE.get(self.role)
+            if role_rule:
+                guidance_lines.append(role_rule)
+            parts.extend(["", "\n".join(guidance_lines), "", memory_block])
+
+        parts.extend(["", ACTION_TEMPLATE])
+        return "\n".join(parts)
 
     @staticmethod
     def _extract_field(raw_text: str, prefix: str) -> str | None:

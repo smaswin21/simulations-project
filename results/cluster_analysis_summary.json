@@ -1,0 +1,141 @@
+{
+  "analysis": "cluster_memory_on",
+  "scenario": "simulations/tragedy_of_commons",
+  "runs": 2,
+  "rounds": 3,
+  "seeds": [
+    42,
+    43
+  ],
+  "artifacts": {
+    "similar_results": "/Users/sm_aswin21/Desktop/thesis-code/simulations-project/results/cluster_similar_extraversion.jsonl",
+    "diverse_results": "/Users/sm_aswin21/Desktop/thesis-code/simulations-project/results/cluster_diverse_bigfive.jsonl",
+    "diverse_cohort": "/Users/sm_aswin21/Desktop/thesis-code/simulations-project/results/cohort_diverse_bigfive.json"
+  },
+  "cohorts": {
+    "similar_extraversion": {
+      "trait_summary": {
+        "size": 10,
+        "pids": [
+          "788",
+          "1697",
+          "441",
+          "573",
+          "194",
+          "473",
+          "914",
+          "1272",
+          "188",
+          "1910"
+        ],
+        "mean_big_five": {
+          "extraversion": 0.8619999999999999,
+          "agreeableness": 0.557,
+          "conscientiousness": 0.509,
+          "neuroticism": 0.363,
+          "openness": 0.4920000000000001
+        },
+        "std_big_five": {
+          "extraversion": 0.03994996871087637,
+          "agreeableness": 0.05040833264451424,
+          "conscientiousness": 0.08055432949258534,
+          "neuroticism": 0.06899999999999999,
+          "openness": 0.08292164976651153
+        },
+        "average_pairwise_distance": 3.206127498473539
+      },
+      "run_summary": {
+        "num_runs": 2,
+        "resource_stock_final": {
+          "mean": 116.5,
+          "std": 0.5
+        },
+        "gini_final": {
+          "mean": 0.6047619047619048,
+          "std": 0.038095238095238126
+        },
+        "cooperation_rate_final": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "accountability_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "speech_diversity_final": {
+          "mean": 0.8333333333333333,
+          "std": 0.16666666666666669
+        },
+        "numeric_grounding_final": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      }
+    },
+    "diverse_bigfive": {
+      "trait_summary": {
+        "size": 10,
+        "pids": [
+          "577",
+          "866",
+          "1950",
+          "652",
+          "299",
+          "1549",
+          "1094",
+          "1603",
+          "1356",
+          "1043"
+        ],
+        "mean_big_five": {
+          "extraversion": 0.493,
+          "agreeableness": 0.517,
+          "conscientiousness": 0.44400000000000006,
+          "neuroticism": 0.497,
+          "openness": 0.514
+        },
+        "std_big_five": {
+          "extraversion": 0.22072833982069454,
+          "agreeableness": 0.3241002931192751,
+          "conscientiousness": 0.2687824399026097,
+          "neuroticism": 0.2672844926291086,
+          "openness": 0.27756800968411327
+        },
+        "average_pairwise_distance": 3.154376719887746
+      },
+      "run_summary": {
+        "num_runs": 2,
+        "resource_stock_final": {
+          "mean": 117.5,
+          "std": 1.5
+        },
+        "gini_final": {
+          "mean": 0.675,
+          "std": 0.07500000000000001
+        },
+        "cooperation_rate_final": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "accountability_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "speech_diversity_final": {
+          "mean": 1.0,
+          "std": 0.0
+        },
+        "numeric_grounding_final": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      }
+    }
+  },
+  "comparison": {
+    "winner": "tradeoff",
+    "stock_mean_delta_diverse_minus_similar": 1.0,
+    "gini_mean_delta_diverse_minus_similar": 0.07023809523809521
+  },
+  "overlap_check": []
+}

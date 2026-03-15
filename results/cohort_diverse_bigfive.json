@@ -1,0 +1,162 @@
+[
+  {
+    "pid": "577",
+    "name": "Ava",
+    "big_five": {
+      "extraversion": 0.18,
+      "agreeableness": 0.14,
+      "conscientiousness": 0.03,
+      "neuroticism": 0.94,
+      "openness": 0.06
+    },
+    "crt_score": 2,
+    "crt_max": 4,
+    "risk_preference": 0.3,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "866",
+    "name": "Charlotte",
+    "big_five": {
+      "extraversion": 0.9,
+      "agreeableness": 0.87,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.11,
+      "openness": 0.97
+    },
+    "crt_score": 1,
+    "crt_max": 4,
+    "risk_preference": 0.158,
+    "has_dependents": false,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1950",
+    "name": "George",
+    "big_five": {
+      "extraversion": 0.62,
+      "agreeableness": 0.07,
+      "conscientiousness": 0.47,
+      "neuroticism": 0.47,
+      "openness": 0.64
+    },
+    "crt_score": 3,
+    "crt_max": 4,
+    "risk_preference": 0.2,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "652",
+    "name": "Ella",
+    "big_five": {
+      "extraversion": 0.42,
+      "agreeableness": 0.68,
+      "conscientiousness": 0.41,
+      "neuroticism": 0.32,
+      "openness": 0.06
+    },
+    "crt_score": 2,
+    "crt_max": 4,
+    "risk_preference": 0.033,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "299",
+    "name": "Edward",
+    "big_five": {
+      "extraversion": 0.33,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.82,
+      "neuroticism": 0.32,
+      "openness": 0.78
+    },
+    "crt_score": 3,
+    "crt_max": 4,
+    "risk_preference": -0.111,
+    "has_dependents": false,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1549",
+    "name": "John",
+    "big_five": {
+      "extraversion": 0.26,
+      "agreeableness": 0.73,
+      "conscientiousness": 0.37,
+      "neuroticism": 0.71,
+      "openness": 0.53
+    },
+    "crt_score": 3,
+    "crt_max": 4,
+    "risk_preference": 0.028,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1094",
+    "name": "Abigail",
+    "big_five": {
+      "extraversion": 0.33,
+      "agreeableness": 0.09,
+      "conscientiousness": 0.15,
+      "neuroticism": 0.89,
+      "openness": 0.69
+    },
+    "crt_score": 1,
+    "crt_max": 4,
+    "risk_preference": 0.067,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1603",
+    "name": "Mia",
+    "big_five": {
+      "extraversion": 0.71,
+      "agreeableness": 0.92,
+      "conscientiousness": 0.82,
+      "neuroticism": 0.18,
+      "openness": 0.46
+    },
+    "crt_score": 1,
+    "crt_max": 4,
+    "risk_preference": -0.067,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1356",
+    "name": "Olivia",
+    "big_five": {
+      "extraversion": 0.47,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.12,
+      "neuroticism": 0.56,
+      "openness": 0.36
+    },
+    "crt_score": 3,
+    "crt_max": 4,
+    "risk_preference": 0.044,
+    "has_dependents": false,
+    "cohort_type": "diverse"
+  },
+  {
+    "pid": "1043",
+    "name": "Steven",
+    "big_five": {
+      "extraversion": 0.71,
+      "agreeableness": 0.56,
+      "conscientiousness": 0.58,
+      "neuroticism": 0.47,
+      "openness": 0.59
+    },
+    "crt_score": 3,
+    "crt_max": 4,
+    "risk_preference": 0.15,
+    "has_dependents": true,
+    "cohort_type": "diverse"
+  }
+]
