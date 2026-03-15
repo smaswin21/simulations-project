@@ -45,7 +45,7 @@ MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "450"))
 MAX_CONCURRENT_AGENTS = int(os.getenv("MAX_CONCURRENT_AGENTS", "5"))
 
 # --- Embedding / Memory Retrieval Settings ---
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "384"))
 RECENCY_DECAY = float(os.getenv("RECENCY_DECAY", "0.15"))
 RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "7"))
