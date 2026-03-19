@@ -28,6 +28,8 @@ class Environment:
         self.config = config
         self.graph = nx.DiGraph()
         self.agents = {a.name: a for a in agents}
+        self.agent_ids = {agent.name: index for index, agent in enumerate(agents)}
+        self.agent_order = [agent.name for agent in agents]
         self.round_number = 0
         self.max_rounds = config.get("simulation", {}).get("max_rounds", NUM_ROUNDS)
         self.round_messages: list[str] = []
@@ -343,6 +345,40 @@ class Environment:
             "inventories": {a.name: self._get_resource(a.name) for a in self.agents.values()},
             "roles": {a.name: a.role for a in self.agents.values()},
             "gini": self.calculate_gini(),
+        }
+
+    def get_visualization_state(self, cooperation_rate: float, outcomes: list[dict]) -> dict:
+        speaking_agents = {
+            outcome.get("agent")
+            for outcome in outcomes
+            if outcome.get("action") in {"message", "report"} and outcome.get("agent")
+        }
+        grazed_by_agent = {
+            action["agent"]: action["amount"]
+            for action in self.round_harvest_actions
+        }
+
+        agents = []
+        for agent_name in self.agent_order:
+            agent = self.agents[agent_name]
+            agents.append(
+                {
+                    "id": self.agent_ids[agent_name],
+                    "name": agent_name,
+                    "role": agent.role,
+                    "location": agent.location,
+                    "inventory": self._get_resource(agent_name),
+                    "grazed": grazed_by_agent.get(agent_name, 0),
+                    "speaking": agent_name in speaking_agents,
+                }
+            )
+
+        return {
+            "round": self.round_number,
+            "stock": self._get_depot_resource(),
+            "total_grazed": self._last_round_total_grazed,
+            "cooperation_rate": cooperation_rate,
+            "agents": agents,
         }
 
     def _others_at_location(self, agent) -> list[str]:

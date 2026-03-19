@@ -123,6 +123,11 @@ class Orchestrator:
         sustainable_quota = self.scenario.get("commons", {}).get("suggested_quota_per_agent", 1)
         self.metrics.update_cooperation_rate(self.env.round_harvest_actions, sustainable_quota)
         self.metrics.update_resource_stock(self.env._get_depot_resource())
+        cooperation_rate = (
+            self.metrics.cooperation_rate_over_time[-1]
+            if self.metrics.cooperation_rate_over_time
+            else 1.0
+        )
 
         speech_records = []
         for outcome in outcomes:
@@ -184,6 +189,10 @@ class Orchestrator:
             {
                 "round": round_num,
                 "world_state": self.env.get_world_state(),
+                "visualization_state": self.env.get_visualization_state(
+                    cooperation_rate=cooperation_rate,
+                    outcomes=outcomes,
+                ),
                 "agent_actions": agent_logs,
                 "outcomes": outcomes,
             }

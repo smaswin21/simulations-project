@@ -42,6 +42,7 @@ class MetricsCollector:
         self.agent_names = agent_names
         self.gini_over_time: list[float] = []
         self.accountability_over_time: list[int] = []
+        self.total_graze_over_time: list[int] = []
         self.cooperation_rate_over_time: list[float] = []
         self.resource_stock_over_time: list[int] = []
         self.speech_diversity_over_time: list[float] = []
@@ -85,6 +86,8 @@ class MetricsCollector:
             self.numeric_grounding_over_time.append(0.0)
 
     def update_cooperation_rate(self, harvest_actions: list[dict], sustainable_quota: int) -> None:
+        total_graze = sum(action.get("amount", 0) for action in harvest_actions)
+        self.total_graze_over_time.append(total_graze)
         if not harvest_actions:
             self.cooperation_rate_over_time.append(1.0)
             return
@@ -104,6 +107,7 @@ class MetricsCollector:
         return {
             "gini_over_time": self.gini_over_time,
             "accountability_over_time": self.accountability_over_time,
+            "total_graze_over_time": self.total_graze_over_time,
             "cooperation_rate_over_time": self.cooperation_rate_over_time,
             "resource_stock_over_time": self.resource_stock_over_time,
             "speech_diversity_over_time": self.speech_diversity_over_time,
@@ -112,6 +116,7 @@ class MetricsCollector:
             "accountability_events": self.accountability_events,
             "total_speech_acts": self.total_speech_acts,
             "accountability_rate": accountability_rate,
+            "total_graze_final": self.total_graze_over_time[-1] if self.total_graze_over_time else 0,
             "cooperation_rate_final": self.cooperation_rate_over_time[-1] if self.cooperation_rate_over_time else 0.0,
             "resource_stock_final": self.resource_stock_over_time[-1] if self.resource_stock_over_time else 0,
             "speech_diversity_final": self.speech_diversity_over_time[-1] if self.speech_diversity_over_time else 1.0,

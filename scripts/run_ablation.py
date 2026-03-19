@@ -18,6 +18,7 @@ from agent_flow.agent import Agent
 from agent_flow.embedding import get_embed_model
 from agent_flow.environment import Environment
 from agent_flow.persona_generator import generate_persona_prompt
+from config.cohorts import load_cohort_profiles
 from config.llms import create_provider
 from config.logger import Logger
 from config.orchestrator import Orchestrator
@@ -48,7 +49,14 @@ def _load_rules(scenario_dir: str):
     return module
 
 
-async def run_single(seed: int, condition: str, num_rounds: int, scenario_dir: str) -> dict:
+async def run_single(
+    seed: int,
+    condition: str,
+    num_rounds: int,
+    scenario_dir: str,
+    cohort_file: str | None = None,
+    cohort_source: str | None = None,
+) -> dict:
     cfg.USE_LAYER2_MEMORY = condition == "B"
 
     scenario = load_scenario(scenario_dir)
@@ -56,9 +64,16 @@ async def run_single(seed: int, condition: str, num_rounds: int, scenario_dir: s
     scenario["rules"] = _load_rules(scenario_dir)
     scenario["seed"] = seed
 
-    profiles = db.load_profiles()
+    profiles, cohort_meta = load_cohort_profiles(
+        cohort_file=cohort_file,
+        cohort_source=cohort_source,
+    )
     agent_count = scenario.get("agents", {}).get("count", 10)
-    role_assignments = assign_roles(profiles, seed=seed, count=agent_count)
+    role_assignments = assign_roles(
+        profiles,
+        seed=seed,
+        count=agent_count,
+    )
     provider = create_provider()
 
     agents = []
@@ -91,10 +106,21 @@ async def run_single(seed: int, condition: str, num_rounds: int, scenario_dir: s
     metrics = orch.get_metrics_summary()
     metrics["condition"] = condition
     metrics["seed"] = seed
+    metrics["provider"] = provider.settings.provider
+    metrics["model"] = provider.settings.model
+    metrics["cohort_label"] = cohort_meta["cohort_label"]
+    metrics["cohort_type"] = cohort_meta["cohort_type"]
     return metrics
 
 
-async def main(num_runs: int, num_rounds: int, scenario_dir: str, tag: str = ""):
+async def main(
+    num_runs: int,
+    num_rounds: int,
+    scenario_dir: str,
+    tag: str = "",
+    cohort_file: str | None = None,
+    cohort_source: str | None = None,
+):
     print(f"\n{'=' * 60}")
     print("  ABLATION STUDY")
     print(f"  Runs per condition: {num_runs}")
@@ -114,14 +140,28 @@ async def main(num_runs: int, num_rounds: int, scenario_dir: str, tag: str = "")
     with open(path_a, "w", encoding="utf-8") as handle:
         for idx, seed in enumerate(seeds, start=1):
             print(f"\n  --- Run A-{idx}/{num_runs} (seed={seed}) ---")
-            metrics = await run_single(seed, "A", num_rounds, scenario_dir)
+            metrics = await run_single(
+                seed,
+                "A",
+                num_rounds,
+                scenario_dir,
+                cohort_file=cohort_file,
+                cohort_source=cohort_source,
+            )
             handle.write(json.dumps(metrics) + "\n")
             handle.flush()
 
     with open(path_b, "w", encoding="utf-8") as handle:
         for idx, seed in enumerate(seeds, start=1):
             print(f"\n  --- Run B-{idx}/{num_runs} (seed={seed}) ---")
-            metrics = await run_single(seed, "B", num_rounds, scenario_dir)
+            metrics = await run_single(
+                seed,
+                "B",
+                num_rounds,
+                scenario_dir,
+                cohort_file=cohort_file,
+                cohort_source=cohort_source,
+            )
             handle.write(json.dumps(metrics) + "\n")
             handle.flush()
 
@@ -135,5 +175,16 @@ if __name__ == "__main__":
     parser.add_argument("--rounds", type=int, default=cfg.NUM_ROUNDS)
     parser.add_argument("--scenario", type=str, default="simulations/tragedy_of_commons")
     parser.add_argument("--tag", type=str, default="")
+    parser.add_argument("--cohort-file", type=str, default=None)
+    parser.add_argument("--cohort-source", type=str, default=None)
     args = parser.parse_args()
-    asyncio.run(main(args.runs, args.rounds, args.scenario, args.tag))
+    asyncio.run(
+        main(
+            args.runs,
+            args.rounds,
+            args.scenario,
+            args.tag,
+            args.cohort_file,
+            args.cohort_source,
+        )
+    )

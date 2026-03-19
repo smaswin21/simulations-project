@@ -7,7 +7,6 @@ from __future__ import annotations
 from agent_flow.embedding import cosine_similarity, embed_text, recency_score
 from config.config import BELIEF_ALIGNMENT_BOOST, RETRIEVAL_TOP_K
 
-PROXIMITY_BOOST = 1.2
 EPISODE_FALLBACK_LIMIT = 1
 
 
@@ -30,13 +29,11 @@ class RetrievalMixin:
             query_vec=query_vec,
             current_round=current_round,
             node_type="fact",
-            nearby_agents=nearby_agents,
         )
         ranked_episodes = self._score_nodes(
             query_vec=query_vec,
             current_round=current_round,
             node_type="episode",
-            nearby_agents=nearby_agents,
         )
 
         result = ranked_facts[:k]
@@ -63,7 +60,6 @@ class RetrievalMixin:
         query_vec,
         current_round: int,
         node_type: str,
-        nearby_agents: set[str],
     ) -> list[tuple[str, dict, float]]:
         ranked = []
         for node_id, data in self.graph.nodes(data=True):
@@ -81,8 +77,6 @@ class RetrievalMixin:
                 importance = self._source_episode_importance(node_id)
             score = relevance * recency * importance
 
-            if node_type == "fact" and data.get("subject") in nearby_agents:
-                score *= PROXIMITY_BOOST
             if relevance >= 0.55:
                 score *= BELIEF_ALIGNMENT_BOOST
 
@@ -105,8 +99,6 @@ class RetrievalMixin:
             confidence = fact_data.get("confidence", 0.5)
             importance = self._source_episode_importance(fact_id)
             score = confidence * 0.4 + recency * 0.3 + importance * 0.3
-            if nearby_agents and fact_data.get("subject") in nearby_agents:
-                score *= PROXIMITY_BOOST
             scored_facts.append((score, fact_id, fact_data))
         scored_facts.sort(key=lambda item: item[0], reverse=True)
         top_facts = [(fact_id, fact_data) for _, fact_id, fact_data in scored_facts[:max_facts]]

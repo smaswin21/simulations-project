@@ -9,3 +9,6 @@ pymongo
 python-dotenv
 pyyaml
 ollama
+pygame
+scipy
+scikit-learn
