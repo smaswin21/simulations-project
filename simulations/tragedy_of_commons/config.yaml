@@ -9,16 +9,16 @@ world:
     - name: "Village Council"
       type: "public"
       starting_location: true
-      actions_allowed: ["MOVE", "SPEAK"]
+      actions_allowed: ["MOVE", "MESSAGE", "SANCTION", "REPORT_DATA", "WAIT"]
       aliases: ["council", "meeting"]
 
     - name: "Pasture"
       type: "resource"
-      actions_allowed: ["MOVE", "GRAZE"]
+      actions_allowed: ["MOVE", "GRAZE_SUSTAINABLE", "GRAZE_AGGRESSIVE", "WAIT"]
       aliases: ["field", "commons"]
 
 agents:
-  count: 18
+  count: 10
   persona_distribution:
     big_five: "stratified"
     crt_distribution: [0.2, 0.3, 0.3, 0.2]

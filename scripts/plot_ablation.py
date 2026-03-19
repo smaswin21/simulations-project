@@ -1,14 +1,5 @@
 """
-plot_ablation.py — Phase 5: Visualize ablation study results.
-
-Reads results/ablation_A.jsonl and results/ablation_B.jsonl and produces
-two comparison plots:
-  1. Gini coefficient over rounds (Condition A vs B, mean +/- std)
-  2. Accountability events over rounds (Condition A vs B, mean +/- std)
-
-Usage:
-    python -m scripts.plot_ablation
-    python -m scripts.plot_ablation --output results/ablation_plots.png
+plot_ablation.py — Plot memory OFF vs ON ablation results.
 """
 
 import argparse
@@ -19,43 +10,42 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-try:
-    import matplotlib.pyplot as plt
-    import numpy as np
-except ImportError:
-    print("This script requires matplotlib and numpy.")
-    print("Install with: pip install matplotlib numpy")
-    sys.exit(1)
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def load_jsonl(path: Path) -> list[dict]:
-    """Load a JSONL file into a list of dicts."""
-    results = []
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                results.append(json.loads(line))
-    return results
+    with open(path, encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
 
 
 def compute_stats(runs: list[dict], key: str):
-    """
-    Compute mean and std across runs for a per-round array key.
-
-    Returns (mean_array, std_array) as numpy arrays.
-    """
     arrays = [run[key] for run in runs if key in run]
     if not arrays:
         return np.array([]), np.array([])
-
-    # Pad to max length if runs have different round counts
-    max_len = max(len(a) for a in arrays)
+    max_len = max(len(array) for array in arrays)
     padded = np.zeros((len(arrays), max_len))
-    for i, a in enumerate(arrays):
-        padded[i, :len(a)] = a
-
+    for idx, array in enumerate(arrays):
+        padded[idx, : len(array)] = array
     return padded.mean(axis=0), padded.std(axis=0)
+
+
+def _plot_series(ax, runs_a: list[dict], runs_b: list[dict], key: str, title: str, ylabel: str):
+    mean_a, std_a = compute_stats(runs_a, key)
+    mean_b, std_b = compute_stats(runs_b, key)
+    if len(mean_a):
+        rounds_a = np.arange(1, len(mean_a) + 1)
+        ax.plot(rounds_a, mean_a, "r-o", label="A: Memory OFF", markersize=4)
+        ax.fill_between(rounds_a, mean_a - std_a, mean_a + std_a, alpha=0.2, color="red")
+    if len(mean_b):
+        rounds_b = np.arange(1, len(mean_b) + 1)
+        ax.plot(rounds_b, mean_b, "b-s", label="B: Memory ON", markersize=4)
+        ax.fill_between(rounds_b, mean_b - std_b, mean_b + std_b, alpha=0.2, color="blue")
+    ax.set_title(title)
+    ax.set_xlabel("Round")
+    ax.set_ylabel(ylabel)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
 
 
 def main(output_path: str | None = None, tag: str = ""):
@@ -65,137 +55,16 @@ def main(output_path: str | None = None, tag: str = ""):
     path_b = results_dir / f"ablation_B{suffix}.jsonl"
 
     if not path_a.exists() or not path_b.exists():
-        print(f"Missing result files. Run the ablation study first:")
-        print(f"  python -m scripts.run_ablation")
+        print("Missing ablation result files.")
         sys.exit(1)
 
     runs_a = load_jsonl(path_a)
     runs_b = load_jsonl(path_b)
 
-    print(f"Loaded {len(runs_a)} Condition A runs, {len(runs_b)} Condition B runs")
-
-    # ── Plot 1: Gini over rounds ─────────────────────────────
-    fig, axes = plt.subplots(3, 2, figsize=(14, 15))
-
-    mean_a, std_a = compute_stats(runs_a, "gini_over_time")
-    mean_b, std_b = compute_stats(runs_b, "gini_over_time")
-
-    rounds_a = np.arange(1, len(mean_a) + 1)
-    rounds_b = np.arange(1, len(mean_b) + 1)
-
-    ax = axes[0, 0]
-    ax.plot(rounds_a, mean_a, "r-o", label="A: Memory OFF", markersize=4)
-    ax.fill_between(rounds_a, mean_a - std_a, mean_a + std_a, alpha=0.2, color="red")
-    ax.plot(rounds_b, mean_b, "b-s", label="B: Memory ON", markersize=4)
-    ax.fill_between(rounds_b, mean_b - std_b, mean_b + std_b, alpha=0.2, color="blue")
-    ax.set_xlabel("Round")
-    ax.set_ylabel("Gini Coefficient")
-    ax.set_title("Medicine Distribution Inequality (Gini)")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim(bottom=0)
-
-    # ── Plot 2: Accountability over rounds ───────────────────
-    mean_a2, std_a2 = compute_stats(runs_a, "accountability_over_time")
-    mean_b2, std_b2 = compute_stats(runs_b, "accountability_over_time")
-
-    rounds_a2 = np.arange(1, len(mean_a2) + 1)
-    rounds_b2 = np.arange(1, len(mean_b2) + 1)
-
-    ax2 = axes[0, 1]
-    ax2.plot(rounds_a2, mean_a2, "r-o", label="A: Memory OFF", markersize=4)
-    ax2.fill_between(rounds_a2, mean_a2 - std_a2, mean_a2 + std_a2, alpha=0.2, color="red")
-    ax2.plot(rounds_b2, mean_b2, "b-s", label="B: Memory ON", markersize=4)
-    ax2.fill_between(rounds_b2, mean_b2 - std_b2, mean_b2 + std_b2, alpha=0.2, color="blue")
-    ax2.set_xlabel("Round")
-    ax2.set_ylabel("Accountability Events")
-    ax2.set_title("Agents Referencing Others' Past Actions")
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    ax2.set_ylim(bottom=0)
-
-    # ── Plot 3: Cooperation rate over rounds (bottom-left) ───
-    mean_a3, std_a3 = compute_stats(runs_a, "cooperation_rate_over_time")
-    mean_b3, std_b3 = compute_stats(runs_b, "cooperation_rate_over_time")
-    rounds_a3 = np.arange(1, len(mean_a3) + 1)
-    rounds_b3 = np.arange(1, len(mean_b3) + 1)
-
-    ax3 = axes[1, 0]
-    if len(mean_a3) > 0:
-        ax3.plot(rounds_a3, mean_a3, "r-o", label="A: Memory OFF", markersize=4)
-        ax3.fill_between(rounds_a3, mean_a3 - std_a3, mean_a3 + std_a3, alpha=0.2, color="red")
-    if len(mean_b3) > 0:
-        ax3.plot(rounds_b3, mean_b3, "b-s", label="B: Memory ON", markersize=4)
-        ax3.fill_between(rounds_b3, mean_b3 - std_b3, mean_b3 + std_b3, alpha=0.2, color="blue")
-    ax3.set_xlabel("Round")
-    ax3.set_ylabel("Cooperation Rate")
-    ax3.set_title("Fraction of Agents Within Sustainable Quota")
-    ax3.legend()
-    ax3.grid(True, alpha=0.3)
-    ax3.set_ylim(0, 1.05)
-
-    # ── Plot 4: Resource stock over rounds (bottom-right) ────
-    mean_a4, std_a4 = compute_stats(runs_a, "resource_stock_over_time")
-    mean_b4, std_b4 = compute_stats(runs_b, "resource_stock_over_time")
-    rounds_a4 = np.arange(1, len(mean_a4) + 1)
-    rounds_b4 = np.arange(1, len(mean_b4) + 1)
-
-    ax4 = axes[1, 1]
-    if len(mean_a4) > 0:
-        ax4.plot(rounds_a4, mean_a4, "r-o", label="A: Memory OFF", markersize=4)
-        ax4.fill_between(rounds_a4, mean_a4 - std_a4, mean_a4 + std_a4, alpha=0.2, color="red")
-    if len(mean_b4) > 0:
-        ax4.plot(rounds_b4, mean_b4, "b-s", label="B: Memory ON", markersize=4)
-        ax4.fill_between(rounds_b4, mean_b4 - std_b4, mean_b4 + std_b4, alpha=0.2, color="blue")
-    ax4.axhline(y=20, color="gray", linestyle="--", alpha=0.5, label="Collapse threshold")
-    ax4.set_xlabel("Round")
-    ax4.set_ylabel("Resource Stock")
-    ax4.set_title("Commons Pool Level (Headline Figure)")
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
-    ax4.set_ylim(bottom=0)
-
-    # ── Plot 5: Speech diversity over rounds (bottom-left) ───
-    mean_a5, std_a5 = compute_stats(runs_a, "speech_diversity_over_time")
-    mean_b5, std_b5 = compute_stats(runs_b, "speech_diversity_over_time")
-    rounds_a5 = np.arange(1, len(mean_a5) + 1)
-    rounds_b5 = np.arange(1, len(mean_b5) + 1)
-
-    ax5 = axes[2, 0]
-    if len(mean_a5) > 0:
-        ax5.plot(rounds_a5, mean_a5, "r-o", label="A: Memory OFF", markersize=4)
-        ax5.fill_between(rounds_a5, mean_a5 - std_a5, mean_a5 + std_a5, alpha=0.2, color="red")
-    if len(mean_b5) > 0:
-        ax5.plot(rounds_b5, mean_b5, "b-s", label="B: Memory ON", markersize=4)
-        ax5.fill_between(rounds_b5, mean_b5 - std_b5, mean_b5 + std_b5, alpha=0.2, color="blue")
-    ax5.set_xlabel("Round")
-    ax5.set_ylabel("Unique / Total Speech Acts")
-    ax5.set_title("Speech Diversity (1.0 = all unique, 0.0 = echo chamber)")
-    ax5.legend()
-    ax5.grid(True, alpha=0.3)
-    ax5.set_ylim(0, 1.05)
-
-    # ── Plot 6: Numeric grounding over rounds (bottom-right) ─
-    mean_a6, std_a6 = compute_stats(runs_a, "numeric_grounding_over_time")
-    mean_b6, std_b6 = compute_stats(runs_b, "numeric_grounding_over_time")
-    rounds_a6 = np.arange(1, len(mean_a6) + 1)
-    rounds_b6 = np.arange(1, len(mean_b6) + 1)
-
-    ax6 = axes[2, 1]
-    if len(mean_a6) > 0:
-        ax6.plot(rounds_a6, mean_a6, "r-o", label="A: Memory OFF", markersize=4)
-        ax6.fill_between(rounds_a6, mean_a6 - std_a6, mean_a6 + std_a6, alpha=0.2, color="red")
-    if len(mean_b6) > 0:
-        ax6.plot(rounds_b6, mean_b6, "b-s", label="B: Memory ON", markersize=4)
-        ax6.fill_between(rounds_b6, mean_b6 - std_b6, mean_b6 + std_b6, alpha=0.2, color="blue")
-    ax6.set_xlabel("Round")
-    ax6.set_ylabel("Fraction with a Number")
-    ax6.set_title("Numeric Grounding (agents citing stock/graze numbers)")
-    ax6.legend()
-    ax6.grid(True, alpha=0.3)
-    ax6.set_ylim(0, 1.05)
-
-    plt.suptitle("Ablation Study: Memory ON vs OFF", fontsize=14, fontweight="bold")
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5), squeeze=False)
+    _plot_series(axes[0, 0], runs_a, runs_b, "resource_stock_over_time", "Commons Stock", "Stock")
+    _plot_series(axes[0, 1], runs_a, runs_b, "gini_over_time", "Social Inequality", "Gini")
+    plt.suptitle("Heterogeneous MASTOC Ablation: Memory OFF vs ON", fontsize=14, fontweight="bold")
     plt.tight_layout()
 
     if output_path:
@@ -203,38 +72,19 @@ def main(output_path: str | None = None, tag: str = ""):
         print(f"Plot saved to: {output_path}")
     else:
         default_path = results_dir / "ablation_plots.png"
-        plt.savefig(str(default_path), dpi=150, bbox_inches="tight")
+        plt.savefig(default_path, dpi=150, bbox_inches="tight")
         print(f"Plot saved to: {default_path}")
 
-    # ── Print summary table ──────────────────────────────────
-    print(f"\n{'='*50}")
-    print(f"  SUMMARY")
-    print(f"{'='*50}")
-
+    print("\nSummary")
     for label, runs in [("A (Memory OFF)", runs_a), ("B (Memory ON)", runs_b)]:
-        ginis = [r["gini_final"] for r in runs]
-        acc_rates = [r["accountability_rate"] for r in runs]
-        coop_rates = [r.get("cooperation_rate_final", 0) for r in runs]
-        final_stocks = [r.get("resource_stock_final", 0) for r in runs]
-        print(f"\n  Condition {label}:")
-        print(f"    Gini (final):        {np.mean(ginis):.3f} +/- {np.std(ginis):.3f}")
-        print(f"    Accountability rate: {np.mean(acc_rates):.3f} +/- {np.std(acc_rates):.3f}")
-        if any(coop_rates):
-            print(f"    Cooperation rate:    {np.mean(coop_rates):.3f} +/- {np.std(coop_rates):.3f}")
-            print(f"    Final stock:         {np.mean(final_stocks):.1f} +/- {np.std(final_stocks):.1f}")
-        diversity = [r.get("speech_diversity_final", 1.0) for r in runs]
-        grounding = [r.get("numeric_grounding_final", 0.0) for r in runs]
-        print(f"    Speech diversity:    {np.mean(diversity):.3f} +/- {np.std(diversity):.3f}")
-        print(f"    Numeric grounding:   {np.mean(grounding):.3f} +/- {np.std(grounding):.3f}")
-
-    print(f"\n{'='*50}\n")
+        print(f"\nCondition {label}:")
+        print(f"  Final stock: {np.mean([r.get('resource_stock_final', 0) for r in runs]):.2f}")
+        print(f"  Final gini: {np.mean([r.get('gini_final', 0) for r in runs]):.3f}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot ablation study results")
-    parser.add_argument("--output", type=str, default=None,
-                        help="Output file path for the plot (default: results/ablation_plots.png)")
-    parser.add_argument("--tag", type=str, default="",
-                        help="Tag for input files (e.g., 'commons_ablation')")
+    parser.add_argument("--output", type=str, default=None)
+    parser.add_argument("--tag", type=str, default="")
     args = parser.parse_args()
-    main(args.output, getattr(args, 'tag', ''))
+    main(args.output, args.tag)

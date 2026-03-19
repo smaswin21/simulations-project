@@ -5,6 +5,7 @@ Database: thesis-architecture
 Collections: profiles, logs, agent_memories
 """
 
+import json
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -47,6 +48,15 @@ def load_profiles() -> list[dict[str, Any]]:
     """
     collection = get_profiles_collection()
     profiles = list(collection.find({}, {"_id": 0}).sort("pid", 1))
+    return profiles
+
+
+def load_profiles_from_json(json_path: str) -> list[dict[str, Any]]:
+    """Load profile-like records from a local JSON file."""
+    with open(json_path, encoding="utf-8") as handle:
+        profiles = json.load(handle)
+    if not isinstance(profiles, list):
+        raise ValueError(f"Expected a list of profiles in {json_path}.")
     return profiles
 
 
@@ -155,6 +165,28 @@ def get_simulation(simulation_id: str) -> dict[str, Any] | None:
     from bson.objectid import ObjectId
     collection = get_logs_collection()
     return collection.find_one({"_id": ObjectId(simulation_id)})
+
+
+def get_simulation_rounds(simulation_id: str) -> list[dict[str, Any]]:
+    """Load stored round documents for a simulation."""
+    from bson.objectid import ObjectId
+
+    if not ObjectId.is_valid(simulation_id):
+        raise ValueError(f"Simulation id '{simulation_id}' is not a valid ObjectId.")
+
+    collection = get_logs_collection()
+    doc = collection.find_one(
+        {"_id": ObjectId(simulation_id)},
+        {"_id": 0, "rounds": 1},
+    )
+    if doc is None:
+        raise ValueError(f"Simulation '{simulation_id}' was not found.")
+
+    rounds = doc.get("rounds") or []
+    if not rounds:
+        raise ValueError(f"Simulation '{simulation_id}' has no rounds to replay.")
+
+    return rounds
 
 
 def get_all_simulations(limit: int = 10) -> list[dict[str, Any]]:

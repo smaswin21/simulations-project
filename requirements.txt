@@ -1,5 +1,6 @@
 anthropic
 fastapi
+fastembed
 matplotlib
 networkx
 numpy
@@ -7,6 +8,7 @@ openai
 pymongo
 python-dotenv
 pyyaml
-sentence-transformers
-uvicorn[standard]
 ollama
+pygame
+scipy
+scikit-learn
