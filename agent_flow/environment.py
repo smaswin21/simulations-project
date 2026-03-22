@@ -181,10 +181,15 @@ class Environment:
         parts.append(f"  Allowed action family: {self._allowed_action_hint(agent.role)}")
         return "\n".join(parts)
 
-    def resolve_actions(self, actions: list[dict]) -> list[dict]:
+    def resolve_actions(
+        self,
+        actions: list[dict],
+        start_locations: dict[str, str] | None = None,
+    ) -> list[dict]:
         self.round_harvest_actions = []
         outcomes: list[dict] = []
-        start_locations = {name: agent.location for name, agent in self.agents.items()}
+        if start_locations is None:
+            start_locations = {name: agent.location for name, agent in self.agents.items()}
 
         for action in actions:
             if action["type"] != "move":
@@ -303,6 +308,7 @@ class Environment:
                     "role": action["role"],
                     "action": "report",
                     "detail": report_message,
+                    "event_location": "Village Council",
                 }
             )
 
@@ -321,6 +327,7 @@ class Environment:
                     "role": action["role"],
                     "action": "message",
                     "detail": message[:200],
+                    "event_location": "Village Council",
                 }
             )
 

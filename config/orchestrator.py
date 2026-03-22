@@ -41,6 +41,10 @@ class Orchestrator:
     async def run_round(self):
         self.env.round_number += 1
         round_num = self.env.round_number
+        start_locations = {
+            name: agent.location
+            for name, agent in self.env.agents.items()
+        }
 
         sanction_messages = self.env.apply_pending_sanctions()
         rule_messages = self.rules.apply_round_events(self.env, round_num, self.scenario) if self.rules else []
@@ -116,7 +120,7 @@ class Orchestrator:
                 }
             )
 
-        outcomes = self.env.resolve_actions(actions)
+        outcomes = self.env.resolve_actions(actions, start_locations=start_locations)
 
         inventories = {agent.name: agent.resource for agent in self.agents}
         self.metrics.update_round(round_num, outcomes, inventories)
@@ -138,9 +142,12 @@ class Orchestrator:
                     "round": round_num,
                     "speaker": outcome.get("agent", ""),
                     "detail": outcome.get("detail", ""),
-                    "location": self.env.agents[outcome["agent"]].location
-                    if outcome.get("agent") in self.env.agents
-                    else "",
+                    "location": outcome.get("event_location")
+                    or (
+                        self.env.agents[outcome["agent"]].location
+                        if outcome.get("agent") in self.env.agents
+                        else ""
+                    ),
                 }
             )
         if speech_records:
@@ -154,6 +161,8 @@ class Orchestrator:
                 outcome
                 for outcome in outcomes
                 if (
+                    outcome.get("action") in {"message", "report"}
+                    or
                     outcome.get("agent") == agent.name
                     or agent.name in outcome.get("detail", "")
                     or self._agent_was_at_location(outcome.get("agent"), agent_location)

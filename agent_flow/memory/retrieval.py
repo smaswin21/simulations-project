@@ -8,6 +8,7 @@ from agent_flow.embedding import cosine_similarity, embed_text, recency_score
 from config.config import BELIEF_ALIGNMENT_BOOST, RETRIEVAL_TOP_K
 
 EPISODE_FALLBACK_LIMIT = 1
+NEARBY_SUBJECT_BOOST = 1.25
 
 
 class RetrievalMixin:
@@ -29,11 +30,13 @@ class RetrievalMixin:
             query_vec=query_vec,
             current_round=current_round,
             node_type="fact",
+            nearby_agents=nearby_agents,
         )
         ranked_episodes = self._score_nodes(
             query_vec=query_vec,
             current_round=current_round,
             node_type="episode",
+            nearby_agents=nearby_agents,
         )
 
         result = ranked_facts[:k]
@@ -60,7 +63,11 @@ class RetrievalMixin:
         query_vec,
         current_round: int,
         node_type: str,
+        nearby_agents: set[str] | None = None,
     ) -> list[tuple[str, dict, float]]:
+        if nearby_agents is None:
+            nearby_agents = set()
+
         ranked = []
         for node_id, data in self.graph.nodes(data=True):
             if data.get("type") != node_type:
@@ -79,6 +86,7 @@ class RetrievalMixin:
 
             if relevance >= 0.55:
                 score *= BELIEF_ALIGNMENT_BOOST
+            score *= self._nearby_subject_boost(data, nearby_agents)
 
             ranked.append((node_id, {**dict(data), "_reflection_similarity": relevance}, score))
 
@@ -92,6 +100,9 @@ class RetrievalMixin:
         max_episodes: int = 3,
         nearby_agents: set[str] | None = None,
     ) -> dict:
+        if nearby_agents is None:
+            nearby_agents = set()
+
         facts = self.get_all_facts()
         scored_facts = []
         for fact_id, fact_data in facts:
@@ -99,6 +110,7 @@ class RetrievalMixin:
             confidence = fact_data.get("confidence", 0.5)
             importance = self._source_episode_importance(fact_id)
             score = confidence * 0.4 + recency * 0.3 + importance * 0.3
+            score *= self._nearby_subject_boost(fact_data, nearby_agents)
             scored_facts.append((score, fact_id, fact_data))
         scored_facts.sort(key=lambda item: item[0], reverse=True)
         top_facts = [(fact_id, fact_data) for _, fact_id, fact_data in scored_facts[:max_facts]]
@@ -116,3 +128,10 @@ class RetrievalMixin:
         ]
 
         return {"facts": top_facts, "episodes": top_episodes}
+
+    @staticmethod
+    def _nearby_subject_boost(data: dict, nearby_agents: set[str]) -> float:
+        subject = data.get("subject")
+        if data.get("type") != "fact" or subject not in nearby_agents:
+            return 1.0
+        return NEARBY_SUBJECT_BOOST
