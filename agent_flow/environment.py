@@ -13,6 +13,10 @@ from config.config import NUM_ROUNDS, SPEECH_HISTORY_ROUNDS
 LOCATED_AT = "LOCATED_AT"
 CONTAINS = "CONTAINS"
 
+ROLE_SCOUT     = "Scout"
+ROLE_HERDER    = "Herder"
+ROLE_REGULATOR = "Regulator"
+
 
 def _get_act(round_number: int, config: dict | None = None) -> tuple[str, str]:
     acts_config = config.get("acts") if config else None
@@ -90,7 +94,7 @@ class Environment:
         return self.graph.nodes["resource_depot"].get("amount", 0)
 
     def _set_depot_resource(self, amount: int):
-        self.graph.nodes["resource_depot"]["amount"] = max(0, amount)
+        self.graph.nodes["resource_depot"]["amount"] = max(0, min(amount, self.max_stock))
 
     def _agents_at_location(self, location: str) -> list[str]:
         agents = []
@@ -147,7 +151,7 @@ class Environment:
         parts.append("")
         parts.append(f"ROLE: {agent.role}")
         parts.append("COMMONS STATUS:")
-        if agent.role == "Scout":
+        if agent.role == ROLE_SCOUT:
             parts.append(f"  Exact stock: {current_stock} {self.resource_unit}")
             parts.append(f"  Exact regeneration rate: {self.current_regeneration_rate} per round")
             parts.append(f"  Last round total grazed: {self._last_round_total_grazed} units")
@@ -156,7 +160,7 @@ class Environment:
             parts.append(f"  Grazing pressure last round: {self._qualitative_pressure(self._last_round_total_grazed)}")
             parts.append("  You do not know the exact stock or regeneration numbers.")
 
-        if self._last_report_data and agent.role != "Scout":
+        if self._last_report_data and agent.role != ROLE_SCOUT:
             parts.append(
                 "  Scout report remembered by the council: "
                 f"{self._last_report_data['message']}"
@@ -191,148 +195,138 @@ class Environment:
         if start_locations is None:
             start_locations = {name: agent.location for name, agent in self.agents.items()}
 
-        for action in actions:
-            if action["type"] != "move":
-                continue
-            target = action.get("target_location")
-            if not target or target == self.agents[action["agent"]].location:
-                continue
-            old_location = self.agents[action["agent"]].location
-            self._set_location(action["agent"], target)
-            outcomes.append(
-                {
-                    "agent": action["agent"],
-                    "role": action["role"],
-                    "action": "move",
-                    "detail": f"Moved from {old_location} to {target}",
-                }
-            )
+        moves     = [a for a in actions if a["type"] == "move"]
+        grazes    = [a for a in actions if a["type"] == "graze"]
+        sanctions = [a for a in actions if a["type"] == "sanction"]
+        reports   = [a for a in actions if a["type"] == "report"]
 
+        for action in moves:
+            self._resolve_move(action, outcomes)
+        for action in grazes:
+            self._resolve_graze(action, outcomes)
+        for action in sanctions:
+            self._resolve_sanction(action, outcomes)
+        for action in reports:
+            self._resolve_report(action, outcomes)
         for action in actions:
-            if action["type"] != "graze":
-                continue
-            if action["role"] != "Herder":
-                outcomes.append(
-                    {
-                        "agent": action["agent"],
-                        "role": action["role"],
-                        "action": "wait",
-                        "detail": "Only herders may graze.",
-                    }
-                )
-                continue
-            if self.agents[action["agent"]].location != self.resource_location:
-                outcomes.append(
-                    {
-                        "agent": action["agent"],
-                        "role": action["role"],
-                        "action": "wait",
-                        "detail": "Cannot graze here — move to Pasture first.",
-                    }
-                )
-                continue
-            requested = max(0, min(2, action.get("amount") or 0))
-            depot = self._get_depot_resource()
-            given = min(requested, depot)
-            self._set_depot_resource(depot - given)
-            self._set_resource(action["agent"], self._get_resource(action["agent"]) + given)
-            self.round_harvest_actions.append({"agent": action["agent"], "amount": given})
-            self.cumulative_harvest[action["agent"]] = self.cumulative_harvest.get(action["agent"], 0) + given
-            mode = "sustainable" if requested <= 1 else "aggressive"
-            outcomes.append(
-                {
-                    "agent": action["agent"],
-                    "role": action["role"],
-                    "action": "graze",
-                    "detail": f"Grazed {given} units via {mode} harvest",
-                }
-            )
-
-        for action in actions:
-            if action["type"] != "sanction":
-                continue
-            if action["role"] != "Regulator":
-                outcomes.append(
-                    {
-                        "agent": action["agent"],
-                        "role": action["role"],
-                        "action": "wait",
-                        "detail": "Only regulators may sanction.",
-                    }
-                )
-                continue
-            target = action.get("target_agent")
-            if not target or self.agents[target].role != "Herder":
-                outcomes.append(
-                    {
-                        "agent": action["agent"],
-                        "role": action["role"],
-                        "action": "wait",
-                        "detail": "Sanction failed — target must be a herder.",
-                    }
-                )
-                continue
-            self._pending_sanctions.append(
-                {"target": target, "round_due": self.round_number + 1, "issued_by": action["agent"]}
-            )
-            outcomes.append(
-                {
-                    "agent": action["agent"],
-                    "role": action["role"],
-                    "action": "sanction",
-                    "detail": f"Queued sanction against {target} for next round.",
-                }
-            )
-
-        for action in actions:
-            if action["type"] != "report":
-                continue
-            stock = self._get_depot_resource()
-            report_message = (
-                f"Scout ecological report: stock={stock} units, "
-                f"regeneration={self.current_regeneration_rate}, "
-                f"last_round_grazed={self._last_round_total_grazed}"
-            )
-            self._last_report_data = {
-                "round": self.round_number,
-                "stock": stock,
-                "regeneration_rate": self.current_regeneration_rate,
-                "message": report_message,
-            }
-            self.speech_log["Village Council"].append(
-                (self.round_number, action["agent"], report_message)
-            )
-            outcomes.append(
-                {
-                    "agent": action["agent"],
-                    "role": action["role"],
-                    "action": "report",
-                    "detail": report_message,
-                    "event_location": "Village Council",
-                }
-            )
-
-        for action in actions:
-            message = (action.get("message") or "").strip()
-            if not message or message.upper() == "NONE":
-                continue
-            if start_locations.get(action["agent"]) != "Village Council":
-                continue
-            self.speech_log["Village Council"].append(
-                (self.round_number, action["agent"], message)
-            )
-            outcomes.append(
-                {
-                    "agent": action["agent"],
-                    "role": action["role"],
-                    "action": "message",
-                    "detail": message[:200],
-                    "event_location": "Village Council",
-                }
-            )
+            self._resolve_message(action, outcomes, start_locations)
 
         self._last_round_total_grazed = sum(item["amount"] for item in self.round_harvest_actions)
         return outcomes
+
+    def _resolve_move(self, action: dict, outcomes: list[dict]):
+        target = action.get("target_location")
+        if not target or target == self.agents[action["agent"]].location:
+            return
+        old_location = self.agents[action["agent"]].location
+        self._set_location(action["agent"], target)
+        outcomes.append({
+            "agent": action["agent"],
+            "role": action["role"],
+            "action": "move",
+            "detail": f"Moved from {old_location} to {target}",
+        })
+
+    def _resolve_graze(self, action: dict, outcomes: list[dict]):
+        if action["role"] != ROLE_HERDER:
+            outcomes.append({
+                "agent": action["agent"],
+                "role": action["role"],
+                "action": "wait",
+                "detail": "Only herders may graze.",
+            })
+            return
+        if self.agents[action["agent"]].location != self.resource_location:
+            outcomes.append({
+                "agent": action["agent"],
+                "role": action["role"],
+                "action": "wait",
+                "detail": "Cannot graze here — move to Pasture first.",
+            })
+            return
+        requested = max(0, min(2, action.get("amount") or 0))
+        depot = self._get_depot_resource()
+        given = min(requested, depot)
+        self._set_depot_resource(depot - given)
+        self._set_resource(action["agent"], self._get_resource(action["agent"]) + given)
+        self.round_harvest_actions.append({"agent": action["agent"], "amount": given})
+        self.cumulative_harvest[action["agent"]] = self.cumulative_harvest.get(action["agent"], 0) + given
+        mode = "sustainable" if requested <= 1 else "aggressive"
+        outcomes.append({
+            "agent": action["agent"],
+            "role": action["role"],
+            "action": "graze",
+            "detail": f"Grazed {given} units via {mode} harvest",
+        })
+
+    def _resolve_sanction(self, action: dict, outcomes: list[dict]):
+        if action["role"] != ROLE_REGULATOR:
+            outcomes.append({
+                "agent": action["agent"],
+                "role": action["role"],
+                "action": "wait",
+                "detail": "Only regulators may sanction.",
+            })
+            return
+        target = action.get("target_agent")
+        if not target or self.agents[target].role != ROLE_HERDER:
+            outcomes.append({
+                "agent": action["agent"],
+                "role": action["role"],
+                "action": "wait",
+                "detail": "Sanction failed — target must be a herder.",
+            })
+            return
+        self._pending_sanctions.append(
+            {"target": target, "round_due": self.round_number + 1, "issued_by": action["agent"]}
+        )
+        outcomes.append({
+            "agent": action["agent"],
+            "role": action["role"],
+            "action": "sanction",
+            "detail": f"Queued sanction against {target} for next round.",
+        })
+
+    def _resolve_report(self, action: dict, outcomes: list[dict]):
+        stock = self._get_depot_resource()
+        report_message = (
+            f"Scout ecological report: stock={stock} units, "
+            f"regeneration={self.current_regeneration_rate}, "
+            f"last_round_grazed={self._last_round_total_grazed}"
+        )
+        self._last_report_data = {
+            "round": self.round_number,
+            "stock": stock,
+            "regeneration_rate": self.current_regeneration_rate,
+            "message": report_message,
+        }
+        self.speech_log["Village Council"].append(
+            (self.round_number, action["agent"], report_message)
+        )
+        outcomes.append({
+            "agent": action["agent"],
+            "role": action["role"],
+            "action": "report",
+            "detail": report_message,
+            "event_location": "Village Council",
+        })
+
+    def _resolve_message(self, action: dict, outcomes: list[dict], start_locations: dict[str, str]):
+        message = (action.get("message") or "").strip()
+        if not message or message.upper() == "NONE":
+            return
+        if start_locations.get(action["agent"]) != "Village Council":
+            return
+        self.speech_log["Village Council"].append(
+            (self.round_number, action["agent"], message)
+        )
+        outcomes.append({
+            "agent": action["agent"],
+            "role": action["role"],
+            "action": "message",
+            "detail": message[:200],
+            "event_location": "Village Council",
+        })
 
     def set_round_messages(self, messages: list[str]) -> None:
         self.round_messages = messages
@@ -434,9 +428,9 @@ class Environment:
 
     @staticmethod
     def _allowed_action_hint(role: str) -> str:
-        if role == "Herder":
+        if role == ROLE_HERDER:
             return "move, message, graze, wait"
-        if role == "Regulator":
+        if role == ROLE_REGULATOR:
             return "move, message, sanction, wait"
         return "move, message, report_data, wait"
 

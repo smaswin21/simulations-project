@@ -109,14 +109,14 @@ class Orchestrator:
                     "agent": agent_name,
                     "role": agent.role,
                     "location": agent.location,
-                    "perception_snippet": perceptions[agent_name][:200] + "...",
-                    "reflection": decision["reflection"][:300],
-                    "message": decision["message"][:200],
+                    "perception_snippet": (perceptions.get(agent_name) or "")[:200] + "...",
+                    "reflection": (decision.get("reflection") or "")[:300],
+                    "message": (decision.get("message") or "")[:200],
                     "action_type": parsed["type"],
                     "action_text": decision["action_text"],
                     "invalid_reason": parsed.get("invalid_reason", ""),
                     "retrieved_labels": decision.get("retrieved_labels", []),
-                    "raw_response": decision["response_raw"][:500],
+                    "raw_response": (decision.get("response_raw") or "")[:500],
                 }
             )
 
@@ -151,9 +151,12 @@ class Orchestrator:
                 }
             )
         if speech_records:
-            with open(self._speech_log_path, "a", encoding="utf-8") as handle:
-                for record in speech_records:
-                    handle.write(json.dumps(record) + "\n")
+            try:
+                with open(self._speech_log_path, "a", encoding="utf-8") as handle:
+                    for record in speech_records:
+                        handle.write(json.dumps(record) + "\n")
+            except OSError as exc:
+                print(f"[orchestrator] Warning: could not write speech log: {exc}")
 
         for agent in self.agents:
             agent_location = agent.location

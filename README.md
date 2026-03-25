@@ -25,16 +25,32 @@ The provider layer lives under [config/llms/providers.py](/Users/sm_aswin21/Desk
 - `OpenAIProvider`
 - `AnthropicProvider`
 - `GeminiProvider`
-- `MistralProvider`
+- `OllamaProvider`
 
-`MistralProvider` is the local default and is intended for Ollama-compatible endpoints.
+`OllamaProvider` is the local default and is intended for Ollama-compatible endpoints.
+If `LLM_PROVIDER` is unset, `python run_simulation.py` will try `http://localhost:11434/v1`.
 
 ## Model Guidance
 - `llama3.2:1b` is acceptable for smoke tests and parser/flow validation.
 - Use a stronger local model such as `Mistral Small 3` or `Qwen3` for thesis-grade runs.
 - Hosted providers can be enabled by changing config only; the simulation code stays provider-agnostic.
 
+## OpenAI Configuration
+To use OpenAI instead of the local Ollama default, set all three of these values:
+- `OPENAI_API_KEY`
+- `LLM_PROVIDER=openai`
+- `LLM_MODEL=gpt-5.1`
+
+Example `.env`:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-5.1
+```
+
 ## Entrypoints
 - `python run_simulation.py --rounds 10 --seed 42`
+- `LLM_PROVIDER=openai LLM_MODEL=gpt-5.1 python run_simulation.py --rounds 10 --seed 42`
 - `python -m scripts.run_ablation --runs 3 --rounds 10`
 - `python -m scripts.plot_ablation`

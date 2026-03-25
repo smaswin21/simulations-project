@@ -11,9 +11,12 @@ from dataclasses import dataclass
 from urllib import error, request
 
 import anthropic
-from openai import AsyncOpenAI
+from openai import APIConnectionError, AsyncOpenAI
 
 from config import config as cfg
+
+OPENAI_EXAMPLE_MODEL = "gpt-5.1"
+LOCAL_DEFAULT_MODEL = "llama3.2:1b"
 
 
 @dataclass(slots=True)
@@ -26,7 +29,7 @@ class LLMSettings:
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
-    mistral_api_key: str = "ollama"
+    ollama_api_key: str = "ollama"
 
 
 class LLMProvider(ABC):
@@ -46,6 +49,34 @@ class LLMProvider(ABC):
         raise NotImplementedError
 
 
+def _validate_settings(settings: LLMSettings) -> None:
+    if settings.provider != "openai":
+        return
+
+    if not settings.openai_api_key:
+        raise ValueError(
+            "LLM_PROVIDER=openai requires OPENAI_API_KEY to be set."
+        )
+
+    if not settings.model or settings.model == LOCAL_DEFAULT_MODEL:
+        current_model = settings.model or "<empty>"
+        raise ValueError(
+            "LLM_PROVIDER=openai requires LLM_MODEL to be set to a valid OpenAI "
+            f"model id. Current value: {current_model!r}. Example: "
+            f"LLM_MODEL={OPENAI_EXAMPLE_MODEL}."
+        )
+
+
+def _ollama_connection_hint(settings: LLMSettings) -> str:
+    base_url = settings.base_url or cfg.OLLAMA_BASE_URL
+    return (
+        f"Failed to reach Ollama at {base_url}. This project defaults to Ollama "
+        "when LLM_PROVIDER is unset. OPENAI_API_KEY is set, but OpenAI is not "
+        "active. To run against OpenAI, set LLM_PROVIDER=openai and "
+        f"LLM_MODEL={OPENAI_EXAMPLE_MODEL} before running python run_simulation.py."
+    )
+
+
 class OpenAIProvider(LLMProvider):
     def __init__(self, settings: LLMSettings):
         super().__init__(settings)
@@ -63,7 +94,7 @@ class OpenAIProvider(LLMProvider):
     ) -> str:
         response = await self.client.chat.completions.create(
             model=self.settings.model,
-            max_tokens=max_tokens,
+            max_completion_tokens=max_tokens,
             temperature=temperature,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -156,7 +187,7 @@ class GeminiProvider(LLMProvider):
         return "\n".join(part.get("text", "") for part in parts).strip()
 
 
-class MistralProvider(LLMProvider):
+class OllamaProvider(LLMProvider):
     """
     Local-first provider using an OpenAI-compatible endpoint such as Ollama.
     """
@@ -164,8 +195,8 @@ class MistralProvider(LLMProvider):
     def __init__(self, settings: LLMSettings):
         super().__init__(settings)
         self.client = AsyncOpenAI(
-            api_key=settings.mistral_api_key or "ollama",
-            base_url=settings.base_url or cfg.MISTRAL_BASE_URL,
+            api_key=settings.ollama_api_key or "ollama",
+            base_url=settings.base_url or cfg.OLLAMA_BASE_URL,
         )
 
     async def generate(
@@ -175,15 +206,20 @@ class MistralProvider(LLMProvider):
         max_tokens: int,
         temperature: float,
     ) -> str:
-        response = await self.client.chat.completions.create(
-            model=self.settings.model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.settings.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+        except APIConnectionError as exc:
+            if self.settings.openai_api_key:
+                raise RuntimeError(_ollama_connection_hint(self.settings)) from exc
+            raise
         return response.choices[0].message.content or ""
 
 
@@ -193,8 +229,8 @@ def build_settings() -> LLMSettings:
     if not default_base_url:
         if provider == "openai":
             default_base_url = cfg.OPENAI_BASE_URL
-        elif provider == "mistral":
-            default_base_url = cfg.MISTRAL_BASE_URL
+        elif provider == "ollama":
+            default_base_url = cfg.OLLAMA_BASE_URL
 
     return LLMSettings(
         provider=provider,
@@ -205,12 +241,13 @@ def build_settings() -> LLMSettings:
         openai_api_key=cfg.OPENAI_API_KEY,
         anthropic_api_key=cfg.ANTHROPIC_API_KEY,
         gemini_api_key=cfg.GEMINI_API_KEY,
-        mistral_api_key=cfg.MISTRAL_API_KEY,
+        ollama_api_key=cfg.OLLAMA_API_KEY,
     )
 
 
 def create_provider(settings: LLMSettings | None = None) -> LLMProvider:
     settings = settings or build_settings()
+    _validate_settings(settings)
     provider = settings.provider
 
     if provider == "openai":
@@ -219,10 +256,10 @@ def create_provider(settings: LLMSettings | None = None) -> LLMProvider:
         return AnthropicProvider(settings)
     if provider == "gemini":
         return GeminiProvider(settings)
-    if provider == "mistral":
-        return MistralProvider(settings)
+    if provider == "ollama":
+        return OllamaProvider(settings)
 
     raise ValueError(
         f"Unsupported LLM provider '{provider}'. "
-        "Expected one of: openai, anthropic, gemini, mistral."
+        "Expected one of: openai, anthropic, gemini, ollama."
     )

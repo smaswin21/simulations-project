@@ -9,6 +9,12 @@ from config.config import BELIEF_ALIGNMENT_BOOST, RETRIEVAL_TOP_K
 
 EPISODE_FALLBACK_LIMIT = 1
 NEARBY_SUBJECT_BOOST = 1.25
+BELIEF_ALIGNMENT_THRESHOLD = 0.55  # minimum relevance to apply belief alignment boost
+
+# Heuristic scoring weights (used when no embedding is available)
+W_CONF = 0.4  # weight for confidence (facts) or importance-as-proxy (episodes)
+W_REC  = 0.3  # weight for recency
+W_IMP  = 0.3  # weight for importance
 
 
 class RetrievalMixin:
@@ -24,7 +30,7 @@ class RetrievalMixin:
 
         query_vec = embed_text(current_reflection)
         if query_vec is None:
-            return self._retrieve_heuristic_as_ranked(current_round, k)
+            return self._retrieve_heuristic_as_ranked(current_round, k, nearby_agents)
 
         ranked_facts = self._score_nodes(
             query_vec=query_vec,
@@ -49,8 +55,9 @@ class RetrievalMixin:
         self,
         current_round: int,
         k: int,
+        nearby_agents: set[str] | None = None,
     ) -> list[tuple[str, dict, float]]:
-        retrieved = self.retrieve_memories(current_round)
+        retrieved = self.retrieve_memories(current_round, nearby_agents=nearby_agents)
         flat: list[tuple[str, dict, float]] = []
         for fact_id, fact_data in retrieved["facts"]:
             flat.append((fact_id, fact_data, 0.5))
@@ -84,7 +91,7 @@ class RetrievalMixin:
                 importance = self._source_episode_importance(node_id)
             score = relevance * recency * importance
 
-            if relevance >= 0.55:
+            if relevance >= BELIEF_ALIGNMENT_THRESHOLD:
                 score *= BELIEF_ALIGNMENT_BOOST
             score *= self._nearby_subject_boost(data, nearby_agents)
 
@@ -109,7 +116,7 @@ class RetrievalMixin:
             recency = recency_score(current_round, fact_data.get("round", 0))
             confidence = fact_data.get("confidence", 0.5)
             importance = self._source_episode_importance(fact_id)
-            score = confidence * 0.4 + recency * 0.3 + importance * 0.3
+            score = W_CONF * confidence + W_REC * recency + W_IMP * importance
             score *= self._nearby_subject_boost(fact_data, nearby_agents)
             scored_facts.append((score, fact_id, fact_data))
         scored_facts.sort(key=lambda item: item[0], reverse=True)
@@ -120,7 +127,9 @@ class RetrievalMixin:
         for episode_id, episode_data in episodes:
             recency = recency_score(current_round, episode_data.get("round", 0))
             importance = episode_data.get("importance", 0.3)
-            scored_episodes.append((importance * 0.6 + recency * 0.4, episode_id, episode_data))
+            # Episodes have no confidence field; use importance as proxy (same W_CONF weight)
+            score = (W_CONF + W_IMP) * importance + W_REC * recency
+            scored_episodes.append((score, episode_id, episode_data))
         scored_episodes.sort(key=lambda item: item[0], reverse=True)
         top_episodes = [
             (episode_id, episode_data)

@@ -48,17 +48,25 @@ class NodesMixin:
         )
         if source_episode_id in self.graph:
             self.graph.add_edge(node_id, source_episode_id, rel="EXTRACTED_FROM")
+        else:
+            print(f"[memory] Warning: source episode '{source_episode_id}' not in graph — fact '{node_id}' is orphaned")
         self.fact_counter += 1
         return node_id
 
-    def get_all_facts(self) -> list[tuple[str, dict]]:
-        facts = [
+    def _get_nodes_by_type(self, node_type: str) -> list[tuple[str, dict]]:
+        nodes = [
             (node_id, data)
             for node_id, data in self.graph.nodes(data=True)
-            if data.get("type") == "fact"
+            if data.get("type") == node_type
         ]
-        facts.sort(key=lambda item: item[1].get("round", 0))
-        return facts
+        nodes.sort(key=lambda item: item[1].get("round", 0))
+        return nodes
+
+    def get_all_facts(self) -> list[tuple[str, dict]]:
+        return self._get_nodes_by_type("fact")
+
+    def get_all_episodes(self) -> list[tuple[str, dict]]:
+        return self._get_nodes_by_type("episode")
 
     def get_facts_for_episode(self, episode_id: str) -> list[tuple[str, dict]]:
         facts = []
@@ -73,12 +81,3 @@ class NodesMixin:
         if episode_id in self.graph:
             return dict(self.graph.nodes[episode_id])
         return None
-
-    def get_all_episodes(self) -> list[tuple[str, dict]]:
-        episodes = [
-            (node_id, data)
-            for node_id, data in self.graph.nodes(data=True)
-            if data.get("type") == "episode"
-        ]
-        episodes.sort(key=lambda item: item[1].get("round", 0))
-        return episodes
