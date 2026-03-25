@@ -12,18 +12,4 @@ __pycache__
 
 .opencode
 
-docs
 
-docs/superpowers
-
-docs/plans
-
-docs/
-!docs/
-docs/*
-!docs/thesis_diagrams/
-!docs/thesis_diagrams/**
-
-.superpowers/
-
-node_modules/
