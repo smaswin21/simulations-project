@@ -1,7 +1,5 @@
 # Simulation Architecture Walkthrough
 
-This document explains how the repository works as a running system, not just as a set of files. It starts with the high-level architecture, then drills into the exact runtime order used by the code, with specific attention to graphs, embeddings, retrieval, and metric storage.
-
 The walkthrough is grounded in the current implementation in:
 
 - [`run_simulation.py`](../run_simulation.py)
