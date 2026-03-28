@@ -34,6 +34,20 @@ class StubAgent:
         }
 
 
+class FailingAgent:
+    def __init__(self, name: str, role: str, error_message: str):
+        self.name = name
+        self.role = role
+        self.location = ""
+        self.resource = 0
+        self.memory = EpisodicMemoryGraph(agent_name=name)
+        self._error_message = error_message
+
+    async def decide(self, perception: str, round_num: int = 0, nearby_agents: set[str] | None = None) -> dict:
+        del perception, round_num, nearby_agents
+        raise RuntimeError(self._error_message)
+
+
 class RoundFlowFixTests(unittest.TestCase):
     def setUp(self):
         self.scenario = {
@@ -125,6 +139,27 @@ class RoundFlowFixTests(unittest.TestCase):
         self.assertEqual(len(outcomes), 1)
         self.assertEqual(outcomes[0]["action"], "report")
         self.assertEqual(outcomes[0]["event_location"], "Village Council")
+
+    def test_run_round_raises_when_all_agent_decisions_fail(self):
+        agents = [
+            FailingAgent("Ava", "Herder", "Anthropic billing error"),
+            FailingAgent("Ben", "Regulator", "Anthropic billing error"),
+        ]
+        env = Environment(agents, self.scenario)
+        logger = Logger()
+        orch = Orchestrator(
+            agents=agents,
+            environment=env,
+            logger=logger,
+            llm_provider=None,
+            scenario=self.scenario,
+        )
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "All agent decisions failed in round 1.*Anthropic billing error",
+        ):
+            asyncio.run(orch.run_round())
 
 
 if __name__ == "__main__":

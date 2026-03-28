@@ -13,7 +13,7 @@ class AutoPlotTests(unittest.TestCase):
         scenario = {"simulation": {"name": "Commons Test"}}
 
         with patch(
-            "run_simulation.plot_memory_only.save_simulation_plot",
+            "scripts.plot_memory_only.save_simulation_plot",
             return_value=Path("memory_plots/abc123.png"),
         ) as save_plot:
             stdout = io.StringIO()
@@ -32,7 +32,7 @@ class AutoPlotTests(unittest.TestCase):
         scenario = {"simulation": {"name": "Commons Test"}}
 
         with patch(
-            "run_simulation.plot_memory_only.save_simulation_plot",
+            "scripts.plot_memory_only.save_simulation_plot",
             side_effect=RuntimeError("plot broke"),
         ):
             stdout = io.StringIO()

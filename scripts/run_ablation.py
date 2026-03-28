@@ -4,7 +4,6 @@ run_ablation.py — Run memory OFF vs memory ON ablations.
 
 import argparse
 import asyncio
-import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -12,41 +11,11 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import config.db as db
 import config.config as cfg
-from agent_flow.agent import Agent
 from agent_flow.embedding import get_embed_model
-from agent_flow.environment import Environment
-from agent_flow.persona_generator import generate_persona_prompt
-from config.cohorts import load_cohort_profiles
-from config.llms import create_provider
-from config.logger import Logger
+from config.llms import add_selection_args, build_settings, resolve_model_selection
 from config.orchestrator import Orchestrator
-from config.scenario_loader import load_scenario
-from run_simulation import assign_roles
-
-
-def _get_start_location(scenario: dict) -> str:
-    for loc in scenario.get("locations", []):
-        if loc.get("starting_location"):
-            return loc.get("name")
-    locations = scenario.get("locations", [])
-    if locations:
-        return locations[0].get("name")
-    return "Village Council"
-
-
-def _load_rules(scenario_dir: str):
-    rules_path = Path(scenario_dir) / "rules.py"
-    if not rules_path.exists():
-        return None
-    module_name = f"scenario_rules_{rules_path.stem}"
-    spec = importlib.util.spec_from_file_location(module_name, rules_path)
-    if not spec or not spec.loader:
-        return None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from config.simulation_setup import build_simulation_setup
 
 
 async def run_single(
@@ -54,44 +23,27 @@ async def run_single(
     condition: str,
     num_rounds: int,
     scenario_dir: str,
+    llm_settings,
     cohort_file: str | None = None,
     cohort_source: str | None = None,
 ) -> dict:
     cfg.USE_LAYER2_MEMORY = condition == "B"
 
-    scenario = load_scenario(scenario_dir)
-    scenario["start_location"] = _get_start_location(scenario)
-    scenario["rules"] = _load_rules(scenario_dir)
-    scenario["seed"] = seed
-
-    profiles, cohort_meta = load_cohort_profiles(
+    setup = build_simulation_setup(
+        seed=seed,
+        scenario_dir=scenario_dir,
+        llm_settings=llm_settings,
+        num_rounds=num_rounds,
         cohort_file=cohort_file,
         cohort_source=cohort_source,
+        seed_context={"condition": condition},
     )
-    agent_count = scenario.get("agents", {}).get("count", 10)
-    role_assignments = assign_roles(
-        profiles,
-        seed=seed,
-        count=agent_count,
-    )
-    provider = create_provider()
-
-    agents = []
-    for profile, role in role_assignments:
-        persona = generate_persona_prompt(profile, scenario, role)
-        agents.append(
-            Agent(
-                profile=profile,
-                persona_prompt=persona,
-                scenario=scenario,
-                role=role,
-                llm_provider=provider,
-                seed_context={"seed": seed, "condition": condition},
-            )
-        )
-
-    env = Environment(agents, scenario)
-    logger = Logger()
+    scenario = setup.scenario
+    provider = setup.provider
+    agents = setup.agents
+    env = setup.environment
+    logger = setup.logger
+    cohort_meta = setup.cohort_meta
     orch = Orchestrator(
         agents=agents,
         environment=env,
@@ -117,6 +69,7 @@ async def main(
     num_runs: int,
     num_rounds: int,
     scenario_dir: str,
+    llm_settings=None,
     tag: str = "",
     cohort_file: str | None = None,
     cohort_source: str | None = None,
@@ -129,6 +82,7 @@ async def main(
     print(f"{'=' * 60}\n")
 
     get_embed_model()
+    llm_settings = llm_settings or build_settings()
 
     results_dir = PROJECT_ROOT / "results"
     results_dir.mkdir(exist_ok=True)
@@ -145,6 +99,7 @@ async def main(
                 "A",
                 num_rounds,
                 scenario_dir,
+                llm_settings,
                 cohort_file=cohort_file,
                 cohort_source=cohort_source,
             )
@@ -159,6 +114,7 @@ async def main(
                 "B",
                 num_rounds,
                 scenario_dir,
+                llm_settings,
                 cohort_file=cohort_file,
                 cohort_source=cohort_source,
             )
@@ -177,12 +133,22 @@ if __name__ == "__main__":
     parser.add_argument("--tag", type=str, default="")
     parser.add_argument("--cohort-file", type=str, default=None)
     parser.add_argument("--cohort-source", type=str, default=None)
+    add_selection_args(parser)
     args = parser.parse_args()
+    try:
+        choice = resolve_model_selection(args)
+        llm_settings = build_settings(provider=choice.provider, model=choice.model)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    print(f"Using LLM provider: {llm_settings.provider}")
+    print(f"Using LLM model:    {llm_settings.model}")
     asyncio.run(
         main(
             args.runs,
             args.rounds,
             args.scenario,
+            llm_settings,
             args.tag,
             args.cohort_file,
             args.cohort_source,

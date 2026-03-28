@@ -313,8 +313,10 @@ def draw_frame(
         )
 
 
-def handle_events(controller, current_ticks: int, agent_states: dict) -> bool:
+def handle_events(controller, current_ticks: int, agent_states: dict | None = None) -> bool:
     import pygame
+
+    agent_states = agent_states or {}
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

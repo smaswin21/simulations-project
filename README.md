@@ -35,22 +35,24 @@ If `LLM_PROVIDER` is unset, `python run_simulation.py` will try `http://localhos
 - Use a stronger local model such as `Mistral Small 3` or `Qwen3` for thesis-grade runs.
 - Hosted providers can be enabled by changing config only; the simulation code stays provider-agnostic.
 
-## OpenAI Configuration
-To use OpenAI instead of the local Ollama default, set all three of these values:
+## Hosted API Keys
+To use hosted providers, keep the API keys in `.env`:
 - `OPENAI_API_KEY`
-- `LLM_PROVIDER=openai`
-- `LLM_MODEL=gpt-5.1`
+- `ANTHROPIC_API_KEY`
+- `GEMINI_API_KEY`
 
-Example `.env`:
-
-```bash
-OPENAI_API_KEY=your_api_key_here
-LLM_PROVIDER=openai
-LLM_MODEL=gpt-5.1
-```
+You can now choose provider and model at launch time instead of editing `LLM_PROVIDER` and `LLM_MODEL` for each run.
+OpenAI GPT-5 runs use `reasoning_effort=medium` by default in this repo.
+Gemini 3 runs use `GEMINI_THINKING_LEVEL=low` by default in this repo.
 
 ## Entrypoints
+- `python run_simulation.py`
 - `python run_simulation.py --rounds 10 --seed 42`
-- `LLM_PROVIDER=openai LLM_MODEL=gpt-5.1 python run_simulation.py --rounds 10 --seed 42`
+- `python run_simulation.py --ollama --model qwen3.5:9b --rounds 10 --seed 42`
+- `python run_simulation.py --openai --model gpt-5.4 --rounds 10 --seed 42`
+- `python run_simulation.py --anthropic --model claude-3-5-sonnet-latest --rounds 10 --seed 42`
+- `python run_simulation.py --gemini --model gemini-3-flash-preview --rounds 10 --seed 42`
+- `LLM_MAX_TOKENS=200 python run_simulation.py --gemini --model gemini-3-flash-preview --rounds 15 --seed 42`
 - `python -m scripts.run_ablation --runs 3 --rounds 10`
+- `python -m scripts.run_ablation --runs 3 --rounds 10 --ollama --model qwen3.5:9b`
 - `python -m scripts.plot_ablation`

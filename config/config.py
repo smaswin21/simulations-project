@@ -26,6 +26,12 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
+OPENAI_REASONING_EFFORT = (
+    os.getenv("OPENAI_REASONING_EFFORT", "low").strip().lower() or "medium"
+)
+GEMINI_THINKING_LEVEL = (
+    os.getenv("GEMINI_THINKING_LEVEL", "low").strip().lower() or "low"
+)
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434/v1").strip()
 
 # Useful aliases for local-first runs. The ollama provider uses the
