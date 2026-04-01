@@ -22,6 +22,19 @@ def default_output_path(simulation_id: str) -> Path:
     return MEMORY_PLOTS_DIR / f"{simulation_id}.png"
 
 
+def _model_name(simulation: dict) -> str:
+    config = simulation.get("config") or {}
+    model = (
+        config.get("llm_model")
+        or config.get("model")
+        or config.get("llm_provider")
+        or config.get("provider")
+    )
+    if not model:
+        return "Unknown model"
+    return str(model)
+
+
 def _metrics_from_summary(simulation: dict) -> dict[str, list[float] | list[int]] | None:
     final_summary = simulation.get("final_summary") or {}
     metrics = final_summary.get("ablation_metrics") or {}
@@ -77,6 +90,7 @@ def load_run_metrics(simulation_id: str) -> dict[str, object]:
 
     return {
         "simulation_id": simulation_id,
+        "model_name": _model_name(simulation),
         "resource_stock_over_time": metrics["resource_stock_over_time"],
         "gini_over_time": metrics["gini_over_time"],
     }
@@ -91,7 +105,7 @@ def build_plot(run: dict[str, object], plot_title: str):
     ]:
         series = np.asarray(run[key], dtype=float)
         rounds = np.arange(1, len(series) + 1)
-        axis.plot(rounds, series, "b-s", label=f"Memory ON ({run['simulation_id']})", markersize=4)
+        axis.plot(rounds, series, "b-s", label=f"Memory ON ({run['model_name']})", markersize=4)
         axis.set_title(title)
         axis.set_xlabel("Round")
         axis.set_ylabel(ylabel)
@@ -109,7 +123,7 @@ def save_simulation_plot(
     title: str | None = None,
 ) -> Path:
     run = load_run_metrics(simulation_id)
-    plot_title = title or f"Memory ON Run: {simulation_id}"
+    plot_title = title or f"Memory ON Run: {run['model_name']}"
     build_plot(run, plot_title)
 
     destination = Path(output_path) if output_path else default_output_path(simulation_id)

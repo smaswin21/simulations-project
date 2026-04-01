@@ -17,7 +17,7 @@ def _get_bool(name: str, default: bool) -> bool:
 
 
 # --- LLM provider settings ---
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mistral").strip().lower()
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
 LLM_MODEL = os.getenv("LLM_MODEL", "llama3.2:1b").strip()
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "").strip()
 
@@ -26,17 +26,23 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").strip()
+OPENAI_REASONING_EFFORT = (
+    os.getenv("OPENAI_REASONING_EFFORT", "low").strip().lower() or "medium"
+)
+GEMINI_THINKING_LEVEL = (
+    os.getenv("GEMINI_THINKING_LEVEL", "low").strip().lower() or "low"
+)
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434/v1").strip()
 
-# Useful aliases for local-first runs. Mistral uses the OpenAI-compatible
-# Ollama endpoint in this project.
-MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", OLLAMA_API_BASE).strip()
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "ollama")
+# Useful aliases for local-first runs. The ollama provider uses the
+# OpenAI-compatible Ollama endpoint in this project.
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", OLLAMA_API_BASE).strip()
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "ollama")
 
 # Legacy compatibility flags retained for older scripts.
-USE_OLLAMA = LLM_PROVIDER == "mistral"
+USE_OLLAMA = LLM_PROVIDER == "ollama"
 API_BASE = OLLAMA_API_BASE
-API_KEY = MISTRAL_API_KEY
+API_KEY = OLLAMA_API_KEY
 MODEL_NAME = LLM_MODEL
 ANTHROPIC_MODEL = LLM_MODEL
 

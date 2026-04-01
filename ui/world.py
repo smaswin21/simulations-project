@@ -36,6 +36,7 @@ class AgentSpriteState:
     target_y: float
     speed: float
     role: str
+    name: str = ""
     grazed: int = 0
     speaking_until_ms: int = 0
     trail: deque[tuple[float, float]] = field(
@@ -130,6 +131,7 @@ def init_agent_states(
             target_y=target_y,
             speed=rng.uniform(AGENT_SPEED_MIN, AGENT_SPEED_MAX),
             role=agent.get("role", "Herder"),
+            name=agent.get("name", f"Agent {agent['id']}"),
         )
         state.trail.append((x, y))
         agent_states[agent["id"]] = state
@@ -151,6 +153,7 @@ def apply_round_state(
         if state is None:
             continue
         state.role = agent.get("role", state.role)
+        state.name = agent.get("name", state.name)
         state.grazed = agent.get("grazed", 0)
         if agent.get("speaking"):
             state.speaking_until_ms = current_ticks + SPEECH_BUBBLE_MS

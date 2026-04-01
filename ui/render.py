@@ -4,9 +4,12 @@ Rendering and event handling for the Pygame viewer.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from ui.world import AgentSpriteState, HUD_HEIGHT, TRAIL_LENGTH
+
+MAX_PANEL_HEIGHT = 150
 
 HUD_COLOR = (241, 236, 223)
 HUD_BORDER_COLOR = (117, 107, 83)
@@ -81,29 +84,75 @@ def _draw_hud(screen, fonts: dict[str, object], round_data: dict, width: int, pa
     screen.blit(hint_text, (16, 48))
 
 
-def _draw_message_panel(screen, fonts: dict[str, object], recent_messages: list[dict], width: int, height: int):
+def _wrap_text(text: str, font, max_width: int) -> list[str]:
+    words = text.split()
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip() if current else word
+        if font.size(candidate)[0] <= max_width:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word  # oversized single word emitted as-is
+    if current:
+        lines.append(current)
+    return lines if lines else [""]
+
+
+def _draw_message_panel(
+    screen,
+    fonts: dict[str, object],
+    recent_messages: list[dict],
+    width: int,
+    height: int,
+    scroll_offset: int = 0,
+):
     import pygame
 
     if not recent_messages:
         return
 
+    small_font = fonts["small"]
     panel_width = min(360, width - 24)
+    wrap_width = panel_width - 20
     line_height = 20
-    panel_height = 16 + 22 + (line_height * len(recent_messages))
+    lines_that_fit = MAX_PANEL_HEIGHT // line_height
+
+    all_lines: list[str] = []
+    for message in recent_messages:
+        speaker = message.get("speaker") or "Unknown"
+        content = message.get("text", "").replace("\n", " ").strip()
+        all_lines.extend(_wrap_text(f"{speaker}: {content}", small_font, wrap_width))
+
+    total_lines = len(all_lines)
+    max_offset = max(0, total_lines - lines_that_fit)
+    scroll_offset = max(0, min(scroll_offset, max_offset))
+    visible_lines = all_lines[scroll_offset: scroll_offset + lines_that_fit]
+
+    title_area = 16 + 22
+    panel_height = min(title_area + total_lines * line_height, title_area + MAX_PANEL_HEIGHT)
     panel_x = 12
     panel_y = height - panel_height - 12
+
     pygame.draw.rect(screen, PANEL_COLOR, (panel_x, panel_y, panel_width, panel_height), border_radius=8)
     pygame.draw.rect(screen, PANEL_BORDER, (panel_x, panel_y, panel_width, panel_height), 2, border_radius=8)
 
     title = fonts["main"].render("Recent Messages", True, TEXT_COLOR)
     screen.blit(title, (panel_x + 10, panel_y + 8))
-    for index, message in enumerate(recent_messages):
-        speaker = message.get("speaker") or "Unknown"
-        content = message.get("text", "").replace("\n", " ").strip()
-        if len(content) > 44:
-            content = content[:41] + "..."
-        text = fonts["small"].render(f"{speaker}: {content}", True, TEXT_COLOR)
-        screen.blit(text, (panel_x + 10, panel_y + 34 + (index * line_height)))
+
+    for i, line in enumerate(visible_lines):
+        text = small_font.render(line, True, TEXT_COLOR)
+        screen.blit(text, (panel_x + 10, panel_y + title_area + i * line_height))
+
+    if total_lines > lines_that_fit:
+        bar_x = panel_x + panel_width - 6
+        bar_h = panel_height - title_area - 4
+        thumb_h = max(12, int(bar_h * lines_that_fit / total_lines))
+        thumb_y = panel_y + title_area + int((bar_h - thumb_h) * (scroll_offset / max_offset))
+        pygame.draw.rect(screen, PANEL_BORDER, (bar_x, panel_y + title_area, 4, bar_h), border_radius=2)
+        pygame.draw.rect(screen, TEXT_COLOR, (bar_x, thumb_y, 4, thumb_h), border_radius=2)
 
 
 def _draw_trails(screen, agent_states: dict[int, AgentSpriteState]):
@@ -161,10 +210,68 @@ def _draw_agents(
         id_label = id_font.render(str(state.agent_id), True, TEXT_COLOR)
         screen.blit(id_label, id_label.get_rect(center=center))
 
+        name_x = int(state.x) + AGENT_RADIUS + 4
+        name_y = int(state.y) - 6
+        shadow = id_font.render(state.name, True, (240, 240, 240))
+        screen.blit(shadow, (name_x + 1, name_y + 1))
+        name_label = id_font.render(state.name, True, TEXT_COLOR)
+        screen.blit(name_label, (name_x, name_y))
+
         _draw_role_marker(screen, state, fonts, role_icons)
 
         if current_ticks <= state.speaking_until_ms:
             _draw_speech_bubble(screen, center[0], center[1] - 4)
+
+
+def _draw_agent_popup(
+    screen,
+    fonts: dict[str, object],
+    state: AgentSpriteState,
+    total_grazed: int,
+    last_message: str | None,
+    width: int,
+    height: int,
+) -> None:
+    import pygame
+
+    from ui.world import HUD_HEIGHT
+
+    POPUP_WIDTH = 200
+    PADDING = 10
+    line_height = 20
+    small_font = fonts["small"]
+    main_font = fonts["main"]
+
+    msg_text = last_message if last_message is not None else "(no messages yet)"
+    msg_color = TEXT_COLOR if last_message is not None else (140, 130, 110)
+    msg_lines = _wrap_text(msg_text, small_font, POPUP_WIDTH - PADDING * 2)[:3]
+
+    popup_height = PADDING + 26 + line_height + 4 + len(msg_lines) * line_height + PADDING
+
+    cx = int(state.x)
+    cy = int(state.y)
+    popup_x = max(4, min(cx - POPUP_WIDTH // 2, width - POPUP_WIDTH - 4))
+    popup_y = cy - AGENT_RADIUS - popup_height - 8
+    if popup_y < HUD_HEIGHT + 4:
+        popup_y = cy + AGENT_RADIUS + 8
+
+    rect = pygame.Rect(popup_x, popup_y, POPUP_WIDTH, popup_height)
+    pygame.draw.rect(screen, PANEL_COLOR, rect, border_radius=6)
+    pygame.draw.rect(screen, PANEL_BORDER, rect, 2, border_radius=6)
+
+    y = popup_y + PADDING
+    header = main_font.render(f"{state.name}  [{state.role}]", True, TEXT_COLOR)
+    screen.blit(header, (popup_x + PADDING, y))
+    y += 26
+    grazed_surf = small_font.render(f"Grazed: {total_grazed} rounds", True, TEXT_COLOR)
+    screen.blit(grazed_surf, (popup_x + PADDING, y))
+    y += line_height + 4
+    pygame.draw.line(screen, PANEL_BORDER, (popup_x + PADDING, y), (popup_x + POPUP_WIDTH - PADDING, y))
+    y += 4
+    for line in msg_lines:
+        line_surf = small_font.render(line, True, msg_color)
+        screen.blit(line_surf, (popup_x + PADDING, y))
+        y += line_height
 
 
 def draw_frame(
@@ -180,6 +287,10 @@ def draw_frame(
     paused: bool,
     show_trails: bool,
     current_ticks: int,
+    scroll_offset: int = 0,
+    selected_agent_id: int | None = None,
+    agent_total_grazed: int = 0,
+    agent_last_message: str | None = None,
 ) -> None:
     import pygame
 
@@ -194,27 +305,44 @@ def draw_frame(
         _draw_trails(screen, agent_states)
     _draw_agents(screen, fonts, agent_states, current_ticks, role_icons)
     _draw_hud(screen, fonts, round_data, width, paused)
-    _draw_message_panel(screen, fonts, recent_messages, width, height)
+    _draw_message_panel(screen, fonts, recent_messages, width, height, scroll_offset)
+    if selected_agent_id is not None and selected_agent_id in agent_states:
+        _draw_agent_popup(
+            screen, fonts, agent_states[selected_agent_id],
+            agent_total_grazed, agent_last_message, width, height,
+        )
 
 
-def handle_events(controller, current_ticks: int) -> bool:
+def handle_events(controller, current_ticks: int, agent_states: dict | None = None) -> bool:
     import pygame
+
+    agent_states = agent_states or {}
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
-        if event.type != pygame.KEYDOWN:
-            continue
-        if event.key == pygame.K_ESCAPE:
-            return False
-        if event.key == pygame.K_SPACE:
-            controller.toggle_pause(current_ticks)
-        elif event.key == pygame.K_RIGHT:
-            controller.next_round(current_ticks)
-        elif event.key == pygame.K_LEFT:
-            controller.prev_round(current_ticks)
-        elif event.key == pygame.K_r:
-            controller.restart(current_ticks)
-        elif event.key == pygame.K_t:
-            controller.toggle_trails()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                return False
+            elif event.key == pygame.K_SPACE:
+                controller.toggle_pause(current_ticks)
+            elif event.key == pygame.K_RIGHT:
+                controller.next_round(current_ticks)
+            elif event.key == pygame.K_LEFT:
+                controller.prev_round(current_ticks)
+            elif event.key == pygame.K_r:
+                controller.restart(current_ticks)
+            elif event.key == pygame.K_t:
+                controller.toggle_trails()
+        elif event.type == pygame.MOUSEWHEEL:
+            controller.message_scroll_offset -= event.y
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            hit = False
+            for state in agent_states.values():
+                if math.hypot(event.pos[0] - state.x, event.pos[1] - state.y) <= AGENT_RADIUS + 4:
+                    controller.selected_agent_id = state.agent_id
+                    hit = True
+                    break
+            if not hit:
+                controller.selected_agent_id = None
     return True

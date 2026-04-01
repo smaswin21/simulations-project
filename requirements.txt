@@ -12,3 +12,4 @@ ollama
 pygame
 scipy
 scikit-learn
+datasets

@@ -4,6 +4,8 @@ orchestrator.py — Main simulation loop for heterogeneous MASTOC runs.
 
 import asyncio
 import json
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 from agent_flow.action_parser import parse_action
@@ -13,6 +15,29 @@ from config.config import MAX_CONCURRENT_AGENTS
 from metrics.collector import MetricsCollector
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+
+
+def _sanitize_path_token(value: str) -> str:
+    normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip())
+    normalized = re.sub(r"-{2,}", "-", normalized)
+    normalized = normalized.strip("-.")
+    return normalized or "unknown"
+
+
+def _speech_log_filename(
+    *,
+    model: str,
+    simulation_id: str | None = None,
+    condition: str = "",
+    seed: int = 0,
+) -> str:
+    model_token = _sanitize_path_token(model)
+    if simulation_id:
+        return f"speech_log_{model_token}_{simulation_id}.jsonl"
+    if condition:
+        return f"speech_log_{model_token}_{_sanitize_path_token(condition)}_{seed}.jsonl"
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"speech_log_{model_token}_{timestamp}.jsonl"
 
 
 class Orchestrator:
@@ -35,12 +60,22 @@ class Orchestrator:
         self.metrics = MetricsCollector(agent_names=[agent.name for agent in agents])
 
         RESULTS_DIR.mkdir(exist_ok=True)
-        tag = f"_{condition}_{seed}" if condition else ""
-        self._speech_log_path = RESULTS_DIR / f"speech_log{tag}.jsonl"
+        model_name = getattr(getattr(llm_provider, "settings", None), "model", "unknown-model")
+        simulation_id = getattr(logger, "simulation_id", None)
+        self._speech_log_path = RESULTS_DIR / _speech_log_filename(
+            model=model_name,
+            simulation_id=simulation_id,
+            condition=condition,
+            seed=seed,
+        )
 
     async def run_round(self):
         self.env.round_number += 1
         round_num = self.env.round_number
+        start_locations = {
+            name: agent.location
+            for name, agent in self.env.agents.items()
+        }
 
         sanction_messages = self.env.apply_pending_sanctions()
         rule_messages = self.rules.apply_round_events(self.env, round_num, self.scenario) if self.rules else []
@@ -62,6 +97,7 @@ class Orchestrator:
                         round_num=round_num,
                         nearby_agents=nearby,
                     )
+                    decision.setdefault("error", None)
                     return agent.name, decision
                 except Exception as exc:
                     return agent.name, {
@@ -73,9 +109,21 @@ class Orchestrator:
                         "reflection_raw": "",
                         "response_raw": "",
                         "retrieved_labels": [],
+                        "error": str(exc),
                     }
 
         results = await asyncio.gather(*[_agent_decide(agent) for agent in self.agents])
+        failures = [
+            (agent_name, decision.get("error", "Unknown decision error"))
+            for agent_name, decision in results
+            if decision.get("error")
+        ]
+        if failures and len(failures) == len(results):
+            example_agent, example_error = failures[0]
+            raise RuntimeError(
+                f"All agent decisions failed in round {round_num}. "
+                f"Example failure from {example_agent}: {example_error}"
+            )
 
         actions = []
         agent_logs = []
@@ -105,18 +153,18 @@ class Orchestrator:
                     "agent": agent_name,
                     "role": agent.role,
                     "location": agent.location,
-                    "perception_snippet": perceptions[agent_name][:200] + "...",
-                    "reflection": decision["reflection"][:300],
-                    "message": decision["message"][:200],
+                    "perception_snippet": (perceptions.get(agent_name) or "")[:200] + "...",
+                    "reflection": (decision.get("reflection") or "")[:300],
+                    "message": (decision.get("message") or "")[:200],
                     "action_type": parsed["type"],
                     "action_text": decision["action_text"],
                     "invalid_reason": parsed.get("invalid_reason", ""),
                     "retrieved_labels": decision.get("retrieved_labels", []),
-                    "raw_response": decision["response_raw"][:500],
+                    "raw_response": (decision.get("response_raw") or "")[:500],
                 }
             )
 
-        outcomes = self.env.resolve_actions(actions)
+        outcomes = self.env.resolve_actions(actions, start_locations=start_locations)
 
         inventories = {agent.name: agent.resource for agent in self.agents}
         self.metrics.update_round(round_num, outcomes, inventories)
@@ -138,15 +186,21 @@ class Orchestrator:
                     "round": round_num,
                     "speaker": outcome.get("agent", ""),
                     "detail": outcome.get("detail", ""),
-                    "location": self.env.agents[outcome["agent"]].location
-                    if outcome.get("agent") in self.env.agents
-                    else "",
+                    "location": outcome.get("event_location")
+                    or (
+                        self.env.agents[outcome["agent"]].location
+                        if outcome.get("agent") in self.env.agents
+                        else ""
+                    ),
                 }
             )
         if speech_records:
-            with open(self._speech_log_path, "a", encoding="utf-8") as handle:
-                for record in speech_records:
-                    handle.write(json.dumps(record) + "\n")
+            try:
+                with open(self._speech_log_path, "a", encoding="utf-8") as handle:
+                    for record in speech_records:
+                        handle.write(json.dumps(record) + "\n")
+            except OSError as exc:
+                print(f"[orchestrator] Warning: could not write speech log: {exc}")
 
         for agent in self.agents:
             agent_location = agent.location
@@ -154,6 +208,8 @@ class Orchestrator:
                 outcome
                 for outcome in outcomes
                 if (
+                    outcome.get("action") in {"message", "report"}
+                    or
                     outcome.get("agent") == agent.name
                     or agent.name in outcome.get("detail", "")
                     or self._agent_was_at_location(outcome.get("agent"), agent_location)
@@ -218,6 +274,7 @@ class Orchestrator:
         print(f"\n{'━' * 60}")
         print(f"  {sim_name.upper()} — {len(self.agents)} agents, {num_rounds} rounds")
         print(f"{'━' * 60}\n")
+        print(f"Speech log path: {self._speech_log_path}")
 
         for _ in range(num_rounds):
             await self.run_round()

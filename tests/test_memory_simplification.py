@@ -100,7 +100,7 @@ class MemorySimplificationTests(unittest.TestCase):
         self.assertEqual(result["beliefs"][0]["category"], "fairness")
         self.assertEqual(result["beliefs"][0]["subject"], "Ben")
 
-    def test_ranked_retrieval_does_not_change_for_nearby_subjects(self):
+    def test_ranked_retrieval_boosts_nearby_subjects(self):
         memory = EpisodicMemoryGraph(agent_name="Ava")
         ben_episode = memory.add_episode(round_num=2, perception_text="Ben episode", outcomes=[])
         cara_episode = memory.add_episode(round_num=2, perception_text="Cara episode", outcomes=[])
@@ -142,13 +142,9 @@ class MemorySimplificationTests(unittest.TestCase):
             )
 
         self.assertEqual(without_nearby[0][0], cara_fact)
-        self.assertEqual(with_nearby[0][0], cara_fact)
-        self.assertEqual(
-            [node_id for node_id, _, _ in without_nearby[:2]],
-            [node_id for node_id, _, _ in with_nearby[:2]],
-        )
+        self.assertEqual(with_nearby[0][0], ben_fact)
 
-    def test_heuristic_retrieval_does_not_change_for_nearby_subjects(self):
+    def test_heuristic_retrieval_boosts_nearby_subjects(self):
         memory = EpisodicMemoryGraph(agent_name="Ava")
         ben_episode = memory.add_episode(round_num=2, perception_text="Ben episode", outcomes=[])
         cara_episode = memory.add_episode(round_num=2, perception_text="Cara episode", outcomes=[])
@@ -180,11 +176,7 @@ class MemorySimplificationTests(unittest.TestCase):
         )
 
         self.assertEqual(without_nearby["facts"][0][0], cara_fact)
-        self.assertEqual(with_nearby["facts"][0][0], cara_fact)
-        self.assertEqual(
-            [fact_id for fact_id, _ in without_nearby["facts"][:2]],
-            [fact_id for fact_id, _ in with_nearby["facts"][:2]],
-        )
+        self.assertEqual(with_nearby["facts"][0][0], ben_fact)
         self.assertNotEqual(ben_fact, cara_fact)
 
 

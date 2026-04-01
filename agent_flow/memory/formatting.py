@@ -24,7 +24,9 @@ class FormattingMixin:
                 nearby_agents=nearby_agents,
             )
             if ranked:
-                return self._format_ranked_memories(ranked)
+                fact_data_list = [data for _, data, _ in ranked if data.get("type") == "fact"]
+                episode_data_list = [data for _, data, _ in ranked if data.get("type") == "episode"]
+                return self._format_beliefs(fact_data_list, episode_data_list)
 
         retrieved = self.retrieve_memories(
             current_round=current_round,
@@ -32,57 +34,33 @@ class FormattingMixin:
             max_episodes=max_episodes,
             nearby_agents=nearby_agents,
         )
-        return self._format_heuristic_memories(retrieved)
+        fact_data_list = [data for _, data in retrieved["facts"]]
+        episode_data_list = [data for _, data in retrieved["episodes"]]
+        return self._format_beliefs(fact_data_list, episode_data_list)
 
-    def _format_ranked_memories(
+    def _format_beliefs(
         self,
-        ranked: list[tuple[str, dict, float]],
+        fact_data_list: list[dict],
+        episode_data_list: list[dict],
     ) -> tuple[str, list[str]]:
         lines = ["RELEVANT BELIEFS:"]
         labels = []
-        fallback_episodes = []
 
-        for _, data, _score in ranked:
-            if data.get("type") == "fact":
-                category = data.get("category", "belief")
-                content = data.get("content", "")
-                lines.append(f"  [{category}] {content}")
-                labels.append(f"[Belief] {content[:60]}")
-            elif data.get("type") == "episode":
-                fallback_episodes.append(data)
+        for data in fact_data_list:
+            content = data.get("content", "")
+            category = data.get("category", "belief")
+            lines.append(f"  [{category}] {content}")
+            labels.append(f"[Belief] {content[:60]}")
 
         if len(lines) > 1:
             return "\n".join(lines), labels
 
-        if fallback_episodes:
-            episode = fallback_episodes[0]
+        if episode_data_list:
+            episode = episode_data_list[0]
             summary = self._episode_summary(episode)
             return (
                 f"RELEVANT BELIEFS:\n  [Round {episode.get('round', '?')}] {summary}",
                 [f"[Episode R{episode.get('round', '?')}] {summary[:60]}"],
-            )
-        return "", []
-
-    def _format_heuristic_memories(self, retrieved: dict) -> tuple[str, list[str]]:
-        lines = ["RELEVANT BELIEFS:"]
-        labels = []
-
-        if retrieved["facts"]:
-            for _, fact_data in retrieved["facts"]:
-                content = fact_data.get("content", "")
-                category = fact_data.get("category", "belief")
-                lines.append(f"  [{category}] {content}")
-                labels.append(f"[Belief] {content[:60]}")
-
-        if len(lines) > 1:
-            return "\n".join(lines), labels
-
-        if retrieved["episodes"]:
-            _, episode_data = retrieved["episodes"][0]
-            summary = self._episode_summary(episode_data)
-            return (
-                f"RELEVANT BELIEFS:\n  [Round {episode_data.get('round', '?')}] {summary}",
-                [f"[Episode R{episode_data.get('round', '?')}] {summary[:60]}"],
             )
         return "", []
 

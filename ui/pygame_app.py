@@ -47,13 +47,17 @@ def run_viewer(
         while running:
             current_ticks = pygame.time.get_ticks()
             previous_index = controller.current_index
-            running = handle_events(controller, current_ticks)
+            running = handle_events(controller, current_ticks, agent_states)
             advanced = controller.update(current_ticks)
             if advanced or controller.current_index != previous_index:
                 apply_round_state(agent_states, controller.current_round, current_ticks)
 
             dt_seconds = clock.tick(60) / 1000.0
             update_agent_positions(agent_states, dt_seconds, width, height, simulation_id)
+            sel = controller.selected_agent_id
+            total_grazed = controller.get_agent_total_grazed(sel) if sel is not None else 0
+            last_msg = controller.get_agent_last_message(sel) if sel is not None else None
+
             draw_frame(
                 screen,
                 background_surface,
@@ -66,6 +70,10 @@ def run_viewer(
                 paused=controller.paused,
                 show_trails=controller.show_trails,
                 current_ticks=current_ticks,
+                scroll_offset=controller.message_scroll_offset,
+                selected_agent_id=sel,
+                agent_total_grazed=total_grazed,
+                agent_last_message=last_msg,
             )
             pygame.display.flip()
     finally:
