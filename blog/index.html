@@ -27,7 +27,8 @@
       </header>
 
       <!-- VIDEOS -->
-      <section class="section video-section" aria-label="Simulation videos">
+      <section class="section video-section" id="videos">
+        <h2>Videos</h2>
         <div class="video-grid">
           <figure class="video-figure">
             <video controls>
@@ -53,6 +54,7 @@
           src="assets/architecture.png"
           alt="Layered architecture diagram of the Heterogeneous MASTOC system."
           class="diagram-img"
+          loading="lazy"
         />
         <p class="diagram-caption">
           The system is organized in three layers: the agent layer (herders, regulator, scout), the memory layer (per-agent episodic and semantic stores), and the commons layer (shared resource pool with enforcement mechanics). Each agent is backed by an LLM and queries its own memory before acting each round.
@@ -78,6 +80,7 @@
           src="assets/simulation_loop.png"
           alt="Diagram of the simulation loop showing per-round agent decision flow."
           class="diagram-img"
+          loading="lazy"
         />
         <p class="diagram-caption">
           Each round, agents observe the current commons state, query their memory for relevant past interactions, generate a speech act, and then submit an extraction decision. The regulator reviews extraction totals and may issue penalties. Memory is updated at the end of each round with the round's outcomes.
@@ -89,16 +92,16 @@
         <h2>Results</h2>
         <div class="results-grid">
           <figure>
-            <img src="assets/plot1.png" alt="Result plot 1." />
+            <img src="assets/plot1.png" alt="Result plot 1." loading="lazy" />
           </figure>
           <figure>
-            <img src="assets/plot2.png" alt="Result plot 2." />
+            <img src="assets/plot2.png" alt="Result plot 2." loading="lazy" />
           </figure>
           <figure>
-            <img src="assets/plot3.png" alt="Result plot 3." />
+            <img src="assets/plot3.png" alt="Result plot 3." loading="lazy" />
           </figure>
           <figure>
-            <img src="assets/plot4.png" alt="Result plot 4." />
+            <img src="assets/plot4.png" alt="Result plot 4." loading="lazy" />
           </figure>
         </div>
       </section>
