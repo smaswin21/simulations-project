@@ -17,6 +17,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+THESIS_OUTPUT_DIRNAME = "cohort-analysis"
+
+
 def load_jsonl(path: Path) -> list[dict]:
     with open(path, encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
@@ -55,6 +58,7 @@ def summarize_runs(runs: list[dict]) -> dict:
 
 
 def write_summary_csv(rows: list[dict], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "cohort_label",
         "cohort_type",
@@ -72,24 +76,46 @@ def write_summary_csv(rows: list[dict], output_path: Path) -> None:
         writer.writerows(rows)
 
 
+def thesis_label(tag: str) -> str:
+    if tag == "diverse_traits":
+        return "Diverse Traits Cohort"
+    if tag == "similar_extraversion":
+        return "Similar Extraversion Cohort"
+    words = tag.replace("_", " ").split()
+    return " ".join(word.capitalize() for word in words)
+
+
+def default_output_paths(results_dir: Path, baseline_tag: str, pair_tag: str, condition: str) -> tuple[Path, Path]:
+    thesis_dir = results_dir / THESIS_OUTPUT_DIRNAME
+    condition_suffix = "memory-on" if condition == "B" else f"condition-{condition.lower()}"
+    stem = f"{pair_tag.replace('_', '-')}-vs-{baseline_tag.replace('_', '-')}-{condition_suffix}"
+    return (
+        thesis_dir / f"{stem}-summary.csv",
+        thesis_dir / f"{stem}.png",
+    )
+
+
 def plot_pairwise(
     baseline_runs: list[dict],
     comparison_runs: list[dict],
     baseline_label: str,
     comparison_label: str,
     output_path: Path,
+    condition: str,
 ) -> None:
     baseline_curve = mean_curve(baseline_runs, "cooperation_rate_over_time")
     comparison_curve = mean_curve(comparison_runs, "cooperation_rate_over_time")
     if len(baseline_curve) == 0 or len(comparison_curve) == 0:
         raise ValueError("Missing cooperation_rate_over_time data for pairwise plot.")
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(9, 5))
     plt.plot(np.arange(1, len(baseline_curve) + 1), baseline_curve, label=baseline_label, linewidth=2)
     plt.plot(np.arange(1, len(comparison_curve) + 1), comparison_curve, label=comparison_label, linewidth=2)
     plt.xlabel("Round")
     plt.ylabel("Mean Cooperation Rate")
-    plt.title(f"Cooperation Over Rounds: {comparison_label} vs {baseline_label}")
+    condition_label = "Memory ON" if condition == "B" else f"Condition {condition}"
+    plt.title(f"Mean Cooperation Over Rounds: {comparison_label} vs {baseline_label} ({condition_label})")
     plt.ylim(0, 1.05)
     plt.grid(True, alpha=0.3)
     plt.legend()
@@ -116,20 +142,23 @@ def main(
         runs_by_tag[tag] = load_jsonl(path)
 
     summary_rows = [summarize_runs(runs_by_tag[tag]) for tag in tags]
-    summary_path = Path(summary_output) if summary_output else results_dir / "cohort_summary.csv"
+    default_summary_path, default_plot_path = default_output_paths(
+        results_dir=results_dir,
+        baseline_tag=baseline_tag,
+        pair_tag=pair_tag,
+        condition=condition,
+    )
+    summary_path = Path(summary_output) if summary_output else default_summary_path
     write_summary_csv(summary_rows, summary_path)
 
-    plot_path = (
-        Path(plot_output)
-        if plot_output
-        else results_dir / f"cooperation_{pair_tag}_vs_{baseline_tag}.png"
-    )
+    plot_path = Path(plot_output) if plot_output else default_plot_path
     plot_pairwise(
         baseline_runs=runs_by_tag[baseline_tag],
         comparison_runs=runs_by_tag[pair_tag],
-        baseline_label=baseline_tag,
-        comparison_label=pair_tag,
+        baseline_label=thesis_label(baseline_tag),
+        comparison_label=thesis_label(pair_tag),
         output_path=plot_path,
+        condition=condition,
     )
 
     print(f"Summary CSV written to: {summary_path}")

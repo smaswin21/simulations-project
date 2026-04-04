@@ -1,0 +1,172 @@
+[
+  {
+    "pid": "1651",
+    "name": "Eamon",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.22,
+      "agreeableness": 0.32,
+      "conscientiousness": 0.21,
+      "neuroticism": 0.83,
+      "openness": 0.31
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.322,
+    "has_dependents": false
+  },
+  {
+    "pid": "1877",
+    "name": "Farah",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.37,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.17,
+      "neuroticism": 0.83,
+      "openness": 0.41
+    },
+    "crt_score": 4.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.178,
+    "has_dependents": false
+  },
+  {
+    "pid": "548",
+    "name": "Gideon",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.42,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.32,
+      "neuroticism": 0.83,
+      "openness": 0.36
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.611,
+    "has_dependents": true
+  },
+  {
+    "pid": "1685",
+    "name": "Helena",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.26,
+      "agreeableness": 0.38,
+      "conscientiousness": 0.24,
+      "neuroticism": 0.94,
+      "openness": 0.41
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": NaN,
+    "has_dependents": true
+  },
+  {
+    "pid": "1691",
+    "name": "Imani",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.3,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.12,
+      "neuroticism": 0.86,
+      "openness": 0.41
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.111,
+    "has_dependents": false
+  },
+  {
+    "pid": "1084",
+    "name": "Jasper",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.26,
+      "agreeableness": 0.32,
+      "conscientiousness": 0.41,
+      "neuroticism": 0.89,
+      "openness": 0.36
+    },
+    "crt_score": 3.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.017,
+    "has_dependents": false
+  },
+  {
+    "pid": "676",
+    "name": "Kael",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.22,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.32,
+      "neuroticism": 0.79,
+      "openness": 0.53
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.133,
+    "has_dependents": true
+  },
+  {
+    "pid": "1977",
+    "name": "Leona",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.22,
+      "agreeableness": 0.27,
+      "conscientiousness": 0.15,
+      "neuroticism": 0.83,
+      "openness": 0.53
+    },
+    "crt_score": 4.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.089,
+    "has_dependents": true
+  },
+  {
+    "pid": "1369",
+    "name": "Malik",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.26,
+      "agreeableness": 0.22,
+      "conscientiousness": 0.32,
+      "neuroticism": 0.83,
+      "openness": 0.59
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.033,
+    "has_dependents": true
+  },
+  {
+    "pid": "1335",
+    "name": "Nia",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Neuroticism",
+    "big_five": {
+      "extraversion": 0.22,
+      "agreeableness": 0.32,
+      "conscientiousness": 0.37,
+      "neuroticism": 0.86,
+      "openness": 0.22
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": NaN,
+    "has_dependents": true
+  }
+]

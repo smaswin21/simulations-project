@@ -1,0 +1,172 @@
+[
+  {
+    "pid": "772",
+    "name": "Kira",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.52,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.58,
+      "neuroticism": 0.29,
+      "openness": 0.41
+    },
+    "crt_score": 3.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.0,
+    "has_dependents": true
+  },
+  {
+    "pid": "392",
+    "name": "Landon",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.47,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.29,
+      "openness": 0.59
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.189,
+    "has_dependents": true
+  },
+  {
+    "pid": "1590",
+    "name": "Mina",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.52,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.58,
+      "neuroticism": 0.42,
+      "openness": 0.64
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.2,
+    "has_dependents": true
+  },
+  {
+    "pid": "1789",
+    "name": "Nolan",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.37,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.42,
+      "openness": 0.41
+    },
+    "crt_score": 3.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.089,
+    "has_dependents": true
+  },
+  {
+    "pid": "333",
+    "name": "Orla",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.57,
+      "agreeableness": 0.73,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.29,
+      "openness": 0.59
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.022,
+    "has_dependents": true
+  },
+  {
+    "pid": "839",
+    "name": "Parker",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.62,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.51,
+      "openness": 0.53
+    },
+    "crt_score": 0.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.211,
+    "has_dependents": false
+  },
+  {
+    "pid": "252",
+    "name": "Quinn",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.62,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.47,
+      "neuroticism": 0.37,
+      "openness": 0.36
+    },
+    "crt_score": 0.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.5,
+    "has_dependents": true
+  },
+  {
+    "pid": "1168",
+    "name": "Rhea",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.47,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.58,
+      "neuroticism": 0.47,
+      "openness": 0.64
+    },
+    "crt_score": 0.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.067,
+    "has_dependents": false
+  },
+  {
+    "pid": "442",
+    "name": "Soren",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.67,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.53,
+      "neuroticism": 0.25,
+      "openness": 0.36
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.544,
+    "has_dependents": false
+  },
+  {
+    "pid": "623",
+    "name": "Talia",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Agreeableness",
+    "big_five": {
+      "extraversion": 0.42,
+      "agreeableness": 0.84,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.21,
+      "openness": 0.64
+    },
+    "crt_score": 0.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.117,
+    "has_dependents": true
+  }
+]

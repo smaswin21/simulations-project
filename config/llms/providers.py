@@ -149,12 +149,13 @@ class OpenAIProvider(LLMProvider):
         request_kwargs = {
             "model": self.settings.model,
             "max_completion_tokens": max_tokens,
-            "temperature": temperature,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
         }
+        if _supports_openai_temperature(self.settings.model):
+            request_kwargs["temperature"] = temperature
         if _uses_openai_reasoning(self.settings.model) and self.settings.openai_reasoning_effort:
             request_kwargs["reasoning_effort"] = self.settings.openai_reasoning_effort
 
@@ -289,6 +290,12 @@ class OllamaProvider(LLMProvider):
 
 def _uses_openai_reasoning(model: str) -> bool:
     return model.strip().lower().startswith("gpt-5")
+
+
+def _supports_openai_temperature(model: str) -> bool:
+    # GPT-5 chat completions currently reject non-default temperature values,
+    # so omit the field entirely and let the API apply its default behavior.
+    return not _uses_openai_reasoning(model)
 
 
 def _uses_gemini_thinking_level(model: str) -> bool:
