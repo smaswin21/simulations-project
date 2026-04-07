@@ -1,0 +1,3 @@
+[submodule "blog"]
+	path = blog
+	url = https://github.com/smaswin21/blog.git
