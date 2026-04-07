@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - "blog/**"
-      - ".gitmodules"
       - ".github/workflows/deploy-blog-pages.yml"
   workflow_dispatch:
 
@@ -28,8 +27,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
