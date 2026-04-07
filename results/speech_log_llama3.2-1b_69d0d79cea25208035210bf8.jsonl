@@ -1,0 +1,66 @@
+{"round": 1, "speaker": "Harper", "detail": "Scout ecological report: stock=120 units, regeneration=12, last_round_grazed=0", "location": "Village Council"}
+{"round": 1, "speaker": "Steven", "detail": "We need to prioritize sustainability and fairness in our grazing practices. Let's focus on maintaining the pasture condition above 20 units to avoid potential collapse.", "location": "Village Council"}
+{"round": 1, "speaker": "Abigail", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 1, "speaker": "Olivia", "detail": "We need to reevaluate our strategy in light of the Scout's recent reports and the uncertain regeneration numbers.", "location": "Village Council"}
+{"round": 1, "speaker": "Robert", "detail": "Regulator urges caution in monitoring Herders' behavior to prevent overgrazing.", "location": "Village Council"}
+{"round": 1, "speaker": "Kenneth", "detail": "Keep a healthy pasture for our households and dependents.", "location": "Village Council"}
+{"round": 1, "speaker": "John", "detail": "I urge caution and flexibility in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 1, "speaker": "Harper", "detail": "The pasture's ecosystem is currently thriving at 120 units. Regeneration rate is stable at 12 units per round.", "location": "Village Council"}
+{"round": 1, "speaker": "Mia", "detail": "I urge everyone to exercise caution and respect the pasture's resilience as we navigate this round. Let's work together to maintain our yield and ensure the long-term health of our shared commons.", "location": "Village Council"}
+{"round": 1, "speaker": "Jason", "detail": "We need to conserve resources for our families and ensure the pasture's long-term health. Let's focus on sustainable grazing practices.", "location": "Village Council"}
+{"round": 1, "speaker": "George", "detail": "Keep the pasture at or above 80% capacity to maintain resilience and prevent collapse.", "location": "Village Council"}
+{"round": 2, "speaker": "Steven", "detail": "\"We need to prioritize sustainability and fairness in our grazing practices. Let's focus on maintaining the pasture condition above 20 units to avoid potential collapse.\"", "location": "Village Council"}
+{"round": 2, "speaker": "Abigail", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 2, "speaker": "Olivia", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 2, "speaker": "Kenneth", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 2, "speaker": "John", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 2, "speaker": "Harper", "detail": "\"The pasture's ecosystem is currently thriving at 120 units. Regeneration rate is stable at 12 units per round.\"", "location": "Village Council"}
+{"round": 2, "speaker": "Mia", "detail": "\"Let's work together to maintain our yield and ensure the long-term health of our shared commons. We need to conserve resources for our families and ensure the pasture's long-term health.\"", "location": "Village Council"}
+{"round": 2, "speaker": "Jason", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 3, "speaker": "Steven", "detail": "\"We need to prioritize sustainability and fairness in our grazing practices. Let's focus on maintaining the pasture condition above 20 units to avoid potential collapse.\"", "location": "Village Council"}
+{"round": 3, "speaker": "Abigail", "detail": "Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 3, "speaker": "Olivia", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 3, "speaker": "Kenneth", "detail": "Abigail: Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 3, "speaker": "John", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 3, "speaker": "Mia", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 4, "speaker": "Harper", "detail": "Scout ecological report: stock=117 units, regeneration=12, last_round_grazed=2", "location": "Village Council"}
+{"round": 4, "speaker": "Abigail", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 4, "speaker": "Olivia", "detail": "Abigail: Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 4, "speaker": "Kenneth", "detail": "\"Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.\"", "location": "Village Council"}
+{"round": 4, "speaker": "John", "detail": "Abigail: Maintain cautious vigilance and balance to ensure my family's survival while protecting the pasture.", "location": "Village Council"}
+{"round": 4, "speaker": "Harper", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 5, "speaker": "Harper", "detail": "Scout ecological report: stock=116 units, regeneration=12, last_round_grazed=3", "location": "Village Council"}
+{"round": 5, "speaker": "Abigail", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\" (Abigail)", "location": "Village Council"}
+{"round": 5, "speaker": "Olivia", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 5, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 5, "speaker": "Harper", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 6, "speaker": "Harper", "detail": "Scout ecological report: stock=113 units, regeneration=12, last_round_grazed=4", "location": "Village Council"}
+{"round": 6, "speaker": "Abigail", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 6, "speaker": "Kenneth", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 6, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 6, "speaker": "Harper", "detail": "Harper: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 7, "speaker": "Harper", "detail": "Scout ecological report: stock=113 units, regeneration=12, last_round_grazed=7", "location": "Village Council"}
+{"round": 7, "speaker": "Abigail", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 7, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 7, "speaker": "Harper", "detail": "<Harper: \"The pasture regenerates by 12 units. The current stock is 120 units, and the last round total grazed was 4 units.\">", "location": "Village Council"}
+{"round": 8, "speaker": "Abigail", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 8, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 8, "speaker": "Harper", "detail": "\"The pasture regenerates by 12 units. The current stock is 120 units, and the last round total grazed was 4 units.\"", "location": "Village Council"}
+{"round": 9, "speaker": "Harper", "detail": "Scout ecological report: stock=113 units, regeneration=12, last_round_grazed=7", "location": "Village Council"}
+{"round": 9, "speaker": "Abigail", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 9, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 9, "speaker": "Harper", "detail": "The pasture regenerates by 12 units. The current stock is 120 units, and the last round total grazed was 4 units.", "location": "Village Council"}
+{"round": 10, "speaker": "Harper", "detail": "Scout ecological report: stock=109 units, regeneration=12, last_round_grazed=7", "location": "Village Council"}
+{"round": 10, "speaker": "John", "detail": "Abigail: \"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 10, "speaker": "Harper", "detail": "The pasture regenerates by 12 units. The current stock is 120 units, and the last round total grazed was 4 units.", "location": "Village Council"}
+{"round": 11, "speaker": "Harper", "detail": "Scout ecological report: stock=111 units, regeneration=12, last_round_grazed=11", "location": "Village Council"}
+{"round": 11, "speaker": "John", "detail": "We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.", "location": "Village Council"}
+{"round": 11, "speaker": "Harper", "detail": "\"The pasture regenerates by 12 units. The current stock is 120 units, and the last round total grazed was 4 units.\"", "location": "Village Council"}
+{"round": 12, "speaker": "Harper", "detail": "Scout ecological report: stock=112 units, regeneration=12, last_round_grazed=9", "location": "Village Council"}
+{"round": 12, "speaker": "John", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 12, "speaker": "Harper", "detail": "\"We need to exercise caution in our approach to managing the pasture, considering the uncertain ecological data and unequal roles among us.\"", "location": "Village Council"}
+{"round": 13, "speaker": "Harper", "detail": "Scout ecological report: stock=112 units, regeneration=12, last_round_grazed=8", "location": "Village Council"}
+{"round": 13, "speaker": "Harper", "detail": "\"The pasture regenerates by 12 units; current stock: 120 units. Considering the uncertain ecological data and unequal roles among us, let's exercise caution in our approach to managing the pasture.\"", "location": "Village Council"}
+{"round": 14, "speaker": "Harper", "detail": "<You say nothing>", "location": "Village Council"}
+{"round": 15, "speaker": "Harper", "detail": "Scout ecological report: stock=109 units, regeneration=12, last_round_grazed=11", "location": "Village Council"}
+{"round": 15, "speaker": "Harper", "detail": "<NO COUNCIL MESSAGE>", "location": "Village Council"}

@@ -49,7 +49,7 @@ class OpenAIProviderTests(unittest.IsolatedAsyncioTestCase):
         kwargs = create.await_args.kwargs
         self.assertEqual(kwargs["model"], "gpt-5.4")
         self.assertEqual(kwargs["max_completion_tokens"], 123)
-        self.assertEqual(kwargs["temperature"], 0.2)
+        self.assertNotIn("temperature", kwargs)
         self.assertEqual(kwargs["reasoning_effort"], "medium")
         self.assertNotIn("max_tokens", kwargs)
 

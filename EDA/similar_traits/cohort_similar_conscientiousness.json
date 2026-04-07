@@ -1,0 +1,172 @@
+[
+  {
+    "pid": "657",
+    "name": "Ulric",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.57,
+      "agreeableness": 0.49,
+      "conscientiousness": 0.82,
+      "neuroticism": 0.25,
+      "openness": 0.41
+    },
+    "crt_score": 2.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.278,
+    "has_dependents": true
+  },
+  {
+    "pid": "581",
+    "name": "Vera",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.57,
+      "agreeableness": 0.56,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.29,
+      "openness": 0.53
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.067,
+    "has_dependents": true
+  },
+  {
+    "pid": "1614",
+    "name": "Wes",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.37,
+      "agreeableness": 0.56,
+      "conscientiousness": 0.87,
+      "neuroticism": 0.25,
+      "openness": 0.59
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.078,
+    "has_dependents": false
+  },
+  {
+    "pid": "327",
+    "name": "Xenia",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.47,
+      "agreeableness": 0.56,
+      "conscientiousness": 0.67,
+      "neuroticism": 0.25,
+      "openness": 0.46
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.033,
+    "has_dependents": true
+  },
+  {
+    "pid": "110",
+    "name": "Yara",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.52,
+      "agreeableness": 0.44,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.32,
+      "openness": 0.36
+    },
+    "crt_score": 3.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.044,
+    "has_dependents": true
+  },
+  {
+    "pid": "884",
+    "name": "Zane",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.52,
+      "agreeableness": 0.68,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.42,
+      "openness": 0.53
+    },
+    "crt_score": 4.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.044,
+    "has_dependents": true
+  },
+  {
+    "pid": "848",
+    "name": "Alden",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.42,
+      "agreeableness": 0.68,
+      "conscientiousness": 0.82,
+      "neuroticism": 0.32,
+      "openness": 0.31
+    },
+    "crt_score": 3.0,
+    "crt_max": 4.0,
+    "risk_preference": -0.028,
+    "has_dependents": false
+  },
+  {
+    "pid": "273",
+    "name": "Bianca",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.52,
+      "agreeableness": 0.62,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.29,
+      "openness": 0.31
+    },
+    "crt_score": 1.0,
+    "crt_max": 4.0,
+    "risk_preference": NaN,
+    "has_dependents": true
+  },
+  {
+    "pid": "2008",
+    "name": "Callum",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.47,
+      "agreeableness": 0.68,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.42,
+      "openness": 0.36
+    },
+    "crt_score": 4.0,
+    "crt_max": 4.0,
+    "risk_preference": NaN,
+    "has_dependents": false
+  },
+  {
+    "pid": "455",
+    "name": "Delia",
+    "cohort_type": "similar",
+    "similarity_target_trait": "Conscientiousness",
+    "big_five": {
+      "extraversion": 0.37,
+      "agreeableness": 0.56,
+      "conscientiousness": 0.72,
+      "neuroticism": 0.37,
+      "openness": 0.31
+    },
+    "crt_score": 0.0,
+    "crt_max": 4.0,
+    "risk_preference": 0.067,
+    "has_dependents": true
+  }
+]
