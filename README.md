@@ -1,6 +1,6 @@
-# Heterogeneous MASTOC Simulation
+# Thesis Project 
 
-Heterogeneous MASTOC is a thesis project that studies commons governance with a local-first multi-agent simulation. Each run places 10 asymmetric agents into a shared pasture system, where 7 Herders extract resources, 2 Regulators monitor and sanction overuse, and 1 Scout reports ecological conditions. The project is built to compare how role asymmetry, memory, and model choice affect coordination, fairness, and sustainability over repeated rounds.
+A thesis project that studies commons governance with a local-first multi-agent simulation. Each run places 10 asymmetric agents into a shared pasture system, where 7 Herders extract resources, 2 Regulators monitor and sanction overuse, and 1 Scout reports ecological conditions. The project is built to compare how role asymmetry, memory, and model choice affect coordination, fairness, and sustainability over repeated rounds.
 
 ## Overview
 
