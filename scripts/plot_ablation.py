@@ -64,7 +64,7 @@ def main(output_path: str | None = None, tag: str = ""):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5), squeeze=False)
     _plot_series(axes[0, 0], runs_a, runs_b, "resource_stock_over_time", "Commons Stock", "Stock")
     _plot_series(axes[0, 1], runs_a, runs_b, "gini_over_time", "Social Inequality", "Gini")
-    plt.suptitle("Heterogeneous MASTOC Ablation: Memory OFF vs ON", fontsize=14, fontweight="bold")
+    plt.suptitle("Ablation Study: Memory OFF vs ON", fontsize=14, fontweight="bold")
     plt.tight_layout()
 
     if output_path:
