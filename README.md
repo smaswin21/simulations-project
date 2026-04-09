@@ -165,6 +165,14 @@ Sample replay videos:
 
 Click either preview to open the `.mov` file.
 
+Looping replay previews:
+
+| B1 Loop | V2 Loop |
+| --- | --- |
+| <img src="assets/readme-media/B1-loop.gif" alt="B1 looping replay preview" width="100%"> | <img src="assets/readme-media/V2-loop.gif" alt="V2 looping replay preview" width="100%"> |
+
+These looping previews are GIFs so they autoplay and repeat inline in the README.
+
 These ids are only examples. Your simulation ids will be different based on the logs collected in your own runs.
 
 ## 05. Graphs and Analysis
