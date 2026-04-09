@@ -65,9 +65,12 @@ MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/?retryWrites=true&
 
 The code writes to database `thesis-architecture` and uses:
 
-- `profiles`
-- `logs`
-- `agent_memories`
+- `profiles`: stores the seeded agent persona records and Big Five profile data.
+  Appears after: `python -c "from config.db import seed_from_json; print(seed_from_json('EDA/cohort_personas.json'))"`
+- `logs`: stores one document per simulation run with config, agent assignments, round-by-round events, replay data, and final summary.
+  Appears after: `python run_simulation.py` or `python -m scripts.run_ablation ...`
+- `agent_memories`: stores each agent's persisted episodic memory graph for a simulation run.
+  Appears after: `python run_simulation.py` or `python -m scripts.run_ablation ...`
 
 ### 6. Seed the required profiles
 
