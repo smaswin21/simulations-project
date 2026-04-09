@@ -12,6 +12,18 @@ import networkx as nx
 import numpy as np
 from matplotlib.lines import Line2D
 
+ANNOTATION_POSITION = (0.03, 0.56)
+ANNOTATION_FONT_SIZE = 13
+ANNOTATION_BOX_STYLE = "round,pad=0.45"
+ANNOTATION_FACE_COLOR = "#f5f1d3"
+ANNOTATION_ALPHA = 0.95
+ANNOTATION_EDGE_COLOR = "#7a734d"
+LEGEND_FONT_SIZE = 12
+LEGEND_MARKER_SIZE = 12
+LEGEND_HANDLE_LENGTH = 2.0
+LEGEND_BORDER_PAD = 0.7
+LEGEND_LABEL_SPACING = 0.6
+
 
 def load_simulation_from_db(simulation_id: str) -> dict:
     """Load a simulation document from MongoDB by its _id."""
@@ -215,6 +227,36 @@ def _save_current_figure(primary_path: Path, alias_path: Path | None = None) -> 
     return saved_paths
 
 
+def _add_summary_box(axis, annotation: str) -> None:
+    axis.text(
+        *ANNOTATION_POSITION,
+        annotation,
+        transform=axis.transAxes,
+        fontsize=ANNOTATION_FONT_SIZE,
+        verticalalignment="center",
+        linespacing=1.3,
+        bbox=dict(
+            boxstyle=ANNOTATION_BOX_STYLE,
+            facecolor=ANNOTATION_FACE_COLOR,
+            edgecolor=ANNOTATION_EDGE_COLOR,
+            alpha=ANNOTATION_ALPHA,
+        ),
+    )
+
+
+def _add_plot_legend(axis, legend_handles: list[Line2D]) -> None:
+    axis.legend(
+        handles=legend_handles,
+        loc="lower left",
+        frameon=True,
+        fontsize=LEGEND_FONT_SIZE,
+        markerscale=1.15,
+        handlelength=LEGEND_HANDLE_LENGTH,
+        borderpad=LEGEND_BORDER_PAD,
+        labelspacing=LEGEND_LABEL_SPACING,
+    )
+
+
 def plot_interaction_dynamics(graph: nx.Graph, metrics: dict, output_path: Path, alias_path: Path | None = None):
     """Render thesis-ready agent-agent coordination dynamics."""
     plt.figure(figsize=(12, 8))
@@ -253,15 +295,7 @@ def plot_interaction_dynamics(graph: nx.Graph, metrics: dict, output_path: Path,
         f"Repeated encounters: {metrics['total_interaction_events']}\n"
         f"Central agents: {top_names}"
     )
-    axis.text(
-        0.02,
-        0.98,
-        annotation,
-        transform=axis.transAxes,
-        fontsize=10,
-        verticalalignment="top",
-        bbox=dict(boxstyle="round", facecolor="#f5f1d3", alpha=0.9),
-    )
+    _add_summary_box(axis, annotation)
 
     legend_handles = [
         Line2D([0], [0], color="#4c72b0", lw=2.5, label="Edge width = repeated co-presence across rounds"),
@@ -272,11 +306,11 @@ def plot_interaction_dynamics(graph: nx.Graph, metrics: dict, output_path: Path,
             color="w",
             markerfacecolor="#c8e1ef",
             markeredgecolor="black",
-            markersize=10,
+            markersize=LEGEND_MARKER_SIZE,
             label="Node size = interaction centrality",
         ),
     ]
-    axis.legend(handles=legend_handles, loc="lower left", frameon=True, fontsize=9)
+    _add_plot_legend(axis, legend_handles)
     plt.axis("off")
     plt.tight_layout()
     saved_paths = _save_current_figure(output_path, alias_path)
@@ -339,15 +373,7 @@ def plot_resource_dynamics(graph: nx.DiGraph, metrics: dict, output_path: Path, 
         f"Agent transfers: {metrics['total_redistributed']} units\n"
         f"Key accountability agents: {top_names}"
     )
-    axis.text(
-        0.02,
-        0.98,
-        annotation,
-        transform=axis.transAxes,
-        fontsize=10,
-        verticalalignment="top",
-        bbox=dict(boxstyle="round", facecolor="#daf2ef", alpha=0.9),
-    )
+    _add_summary_box(axis, annotation)
 
     legend_handles = [
         Line2D([0], [0], color="#315efb", lw=2.5, label="Blue edge = extraction from the commons"),
@@ -359,7 +385,7 @@ def plot_resource_dynamics(graph: nx.DiGraph, metrics: dict, output_path: Path, 
             color="w",
             markerfacecolor="#f1c40f",
             markeredgecolor="black",
-            markersize=10,
+            markersize=LEGEND_MARKER_SIZE,
             label="Gold node = commons stock source",
         ),
         Line2D(
@@ -369,11 +395,11 @@ def plot_resource_dynamics(graph: nx.DiGraph, metrics: dict, output_path: Path, 
             color="w",
             markerfacecolor="#d7ecf4",
             markeredgecolor="black",
-            markersize=10,
+            markersize=LEGEND_MARKER_SIZE,
             label="Agent node size = final held resources",
         ),
     ]
-    axis.legend(handles=legend_handles, loc="lower left", frameon=True, fontsize=9)
+    _add_plot_legend(axis, legend_handles)
     plt.axis("off")
     plt.tight_layout()
     saved_paths = _save_current_figure(output_path, alias_path)

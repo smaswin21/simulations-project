@@ -7,11 +7,21 @@ from unittest.mock import patch
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 from results import graph_analysis
 
 
 class GraphAnalysisTests(unittest.TestCase):
+    def _render_and_capture_axis(self, render_fn, graph, metrics):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir, "plot.png")
+            with patch.object(graph_analysis.plt, "savefig"), patch.object(graph_analysis.plt, "close"):
+                render_fn(graph, metrics, output_path)
+                figure = plt.gcf()
+                self.addCleanup(plt.close, figure)
+                return figure.axes[0]
+
     def test_build_interaction_graph_accumulates_repeated_contacts(self):
         rounds = [
             {"world_state": {"locations": {"Pasture": ["Alice", "Bob"], "River": ["Cara"]}}},
@@ -69,6 +79,72 @@ class GraphAnalysisTests(unittest.TestCase):
         self.assertEqual(summary["resource"]["total_redistributed"], 2)
         self.assertEqual(summary["resource"]["top_accountability_actors"][0][0], "Regina")
         self.assertGreater(summary["resource"]["end_state_gini"], 0.0)
+
+    def test_plot_interaction_dynamics_uses_left_center_annotation_and_larger_legend(self):
+        graph = graph_analysis.build_interaction_graph(
+            [
+                {"world_state": {"locations": {"Pasture": ["Alice", "Bob", "Cara"]}}},
+                {"world_state": {"locations": {"Pasture": ["Alice", "Bob"]}}},
+            ]
+        )
+        metrics = graph_analysis.summarize_interaction_dynamics(graph)
+
+        axis = self._render_and_capture_axis(graph_analysis.plot_interaction_dynamics, graph, metrics)
+
+        summary_boxes = [text for text in axis.texts if text.get_text().startswith("Network connectivity:")]
+        self.assertEqual(len(summary_boxes), 1)
+        summary_box = summary_boxes[0]
+        self.assertEqual(summary_box.get_position(), graph_analysis.ANNOTATION_POSITION)
+        self.assertEqual(summary_box.get_fontsize(), graph_analysis.ANNOTATION_FONT_SIZE)
+
+        legend = axis.get_legend()
+        self.assertIsNotNone(legend)
+        self.assertEqual(legend.get_texts()[0].get_fontsize(), graph_analysis.LEGEND_FONT_SIZE)
+        self.assertEqual(
+            [text.get_text() for text in legend.get_texts()],
+            [
+                "Edge width = repeated co-presence across rounds",
+                "Node size = interaction centrality",
+            ],
+        )
+
+    def test_plot_resource_dynamics_uses_left_center_annotation_and_larger_legend(self):
+        graph = graph_analysis.build_resource_dynamics_graph(
+            [
+                {
+                    "outcomes": [
+                        {"agent": "Alice", "action": "graze", "detail": "Grazed 4 units from the pasture."},
+                        {"agent": "Bob", "action": "graze", "detail": "Grazed 2 units from the pasture."},
+                        {"agent": "Regina", "action": "sanction", "detail": "Queued sanction against Alice for next round."},
+                    ]
+                }
+            ]
+        )
+        metrics = graph_analysis.summarize_resource_dynamics(
+            graph,
+            {"inventories": {"Alice": 5, "Bob": 3, "Cara": 1, "Regina": 0}},
+        )
+
+        axis = self._render_and_capture_axis(graph_analysis.plot_resource_dynamics, graph, metrics)
+
+        summary_boxes = [text for text in axis.texts if text.get_text().startswith("Final inequality (Gini):")]
+        self.assertEqual(len(summary_boxes), 1)
+        summary_box = summary_boxes[0]
+        self.assertEqual(summary_box.get_position(), graph_analysis.ANNOTATION_POSITION)
+        self.assertEqual(summary_box.get_fontsize(), graph_analysis.ANNOTATION_FONT_SIZE)
+
+        legend = axis.get_legend()
+        self.assertIsNotNone(legend)
+        self.assertEqual(legend.get_texts()[0].get_fontsize(), graph_analysis.LEGEND_FONT_SIZE)
+        self.assertEqual(
+            [text.get_text() for text in legend.get_texts()],
+            [
+                "Blue edge = extraction from the commons",
+                "Green edge = sanction/share transfer between agents",
+                "Gold node = commons stock source",
+                "Agent node size = final held resources",
+            ],
+        )
 
     def test_render_analysis_artifacts_emits_thesis_and_legacy_filenames(self):
         interaction_graph = graph_analysis.build_interaction_graph(
