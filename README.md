@@ -2,6 +2,22 @@
 
 A thesis project on commons governance with a local-first 10-agent simulation: 7 Herders, 2 Regulators, and 1 Scout. The project compares how memory, role asymmetry, and model choice affect coordination, sustainability, and inequality across repeated rounds.
 
+Sample replay videos:
+
+| B1 Replay | V2 Replay |
+| --- | --- |
+| [<img src="assets/readme-media/B1-thumbnail.png" alt="B1 replay preview" width="100%">](assets/readme-media/B1.mov) | [<img src="assets/readme-media/V2-thumbnail.png" alt="V2 replay preview" width="100%">](assets/readme-media/V2.mov) |
+
+Click either preview to open the `.mov` file.
+
+Looping replay previews:
+
+| B1 Loop | V2 Loop |
+| --- | --- |
+| <img src="assets/readme-media/B1-loop.gif" alt="B1 looping replay preview" width="100%"> | <img src="assets/readme-media/V2-loop.gif" alt="V2 looping replay preview" width="100%"> |
+
+These looping previews are GIFs so they autoplay and repeat inline in the README.
+
 ## 01. Project
 
 - Scenario: a shared pasture with asymmetric roles and limited ecological information
@@ -159,22 +175,6 @@ Example simulation ids:
 python -m ui.pygame_app --simulation-id 69c7cc092a96982c1be09c83
 python -m ui.pygame_app --simulation-id 69c7d50e166f08559d20612e
 ```
-
-Sample replay videos:
-
-| B1 Replay | V2 Replay |
-| --- | --- |
-| [<img src="assets/readme-media/B1-thumbnail.png" alt="B1 replay preview" width="100%">](assets/readme-media/B1.mov) | [<img src="assets/readme-media/V2-thumbnail.png" alt="V2 replay preview" width="100%">](assets/readme-media/V2.mov) |
-
-Click either preview to open the `.mov` file.
-
-Looping replay previews:
-
-| B1 Loop | V2 Loop |
-| --- | --- |
-| <img src="assets/readme-media/B1-loop.gif" alt="B1 looping replay preview" width="100%"> | <img src="assets/readme-media/V2-loop.gif" alt="V2 looping replay preview" width="100%"> |
-
-These looping previews are GIFs so they autoplay and repeat inline in the README.
 
 These ids are only examples. Your simulation ids will be different based on the logs collected in your own runs.
 
