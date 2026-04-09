@@ -5,8 +5,8 @@ A thesis project on commons governance with a local-first 10-agent simulation: 7
 ## 01. Project
 
 - Scenario: a shared pasture with asymmetric roles and limited ecological information
-- Providers: `ollama`, `openai`, `anthropic`, `gemini`
-- Storage: MongoDB is required for profiles, run logs, replay data, and memory graphs
+- Providers: [`Ollama`](https://ollama.com/), [`OpenAI`](https://platform.openai.com/docs/overview), [`Anthropic`](https://docs.anthropic.com/), [`Gemini`](https://ai.google.dev/gemini-api/docs)
+- Storage: [`MongoDB`](https://www.mongodb.com/) is required for profiles, run logs, replay data, and memory graphs
 - Outputs: simulation logs, replayable runs, memory plots, ablation plots, and post-run network graphs
 
 Core runtime flow:
@@ -35,6 +35,8 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
+Recommended runtime: [`Python`](https://www.python.org/) 3.10+
+
 ### 3. Install dependencies
 
 ```bash
@@ -49,13 +51,13 @@ cp .env.example .env
 
 ### 5. Configure MongoDB
 
-Use either local MongoDB:
+Use either local [`MongoDB`](https://www.mongodb.com/):
 
 ```bash
 MONGODB_URI=mongodb://localhost:27017
 ```
 
-Or MongoDB Atlas:
+Or [`MongoDB Atlas`](https://www.mongodb.com/products/platform/atlas-database):
 
 ```bash
 MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/?retryWrites=true&w=majority
@@ -80,6 +82,8 @@ ollama serve
 ollama pull qwen3.5:9b
 ```
 
+Official Ollama docs: [ollama.com](https://ollama.com/)
+
 ## 03. Environment and Providers
 
 Minimum required variables:
@@ -92,10 +96,10 @@ LLM_MODEL=qwen3.5:9b
 
 Provider-specific keys:
 
-- OpenAI: `OPENAI_API_KEY`, optional `OPENAI_BASE_URL`, `OPENAI_REASONING_EFFORT`
-- Anthropic: `ANTHROPIC_API_KEY`
-- Gemini: `GEMINI_API_KEY`, optional `GEMINI_THINKING_LEVEL`
-- Ollama: optional `OLLAMA_API_BASE`, `OLLAMA_BASE_URL`, `OLLAMA_API_KEY`
+- OpenAI: `OPENAI_API_KEY`, optional `OPENAI_BASE_URL`, `OPENAI_REASONING_EFFORT` via [OpenAI docs](https://platform.openai.com/docs/overview)
+- Anthropic: `ANTHROPIC_API_KEY` via [Anthropic docs](https://docs.anthropic.com/)
+- Gemini: `GEMINI_API_KEY`, optional `GEMINI_THINKING_LEVEL` via [Gemini API docs](https://ai.google.dev/gemini-api/docs)
+- Ollama: optional `OLLAMA_API_BASE`, `OLLAMA_BASE_URL`, `OLLAMA_API_KEY` via [Ollama docs](https://ollama.com/)
 
 Useful generation defaults:
 
@@ -144,6 +148,8 @@ python -m ui.pygame_app --simulation-id <SIMULATION_ID>
 python -m ui.pygame_app --simulation-id <SIMULATION_ID> --round-duration-ms 1000 --width 1200 --height 800
 ```
 
+Replay display uses [`Pygame`](https://www.pygame.org/docs/).
+
 Example simulation ids:
 
 ```bash
@@ -161,6 +167,8 @@ Ablation study:
 python -m scripts.run_ablation --runs 3 --rounds 10
 python -m scripts.plot_ablation
 ```
+
+Plot generation uses [`Matplotlib`](https://matplotlib.org/).
 
 Memory plot:
 
@@ -187,6 +195,8 @@ Graph outputs:
 
 - `results/analysis/agent-interaction-network-<simulation_id>.png`
 - `results/analysis/resource-flow-network-<simulation_id>.png`
+
+Graph rendering uses [`NetworkX`](https://networkx.org/) with [`Matplotlib`](https://matplotlib.org/).
 
 Optional cohort comparison plot:
 
