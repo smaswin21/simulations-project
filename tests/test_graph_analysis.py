@@ -34,23 +34,6 @@ class GraphAnalysisTests(unittest.TestCase):
         self.assertEqual(graph["Alice"]["Cara"]["weight"], 1)
         self.assertEqual(graph["Bob"]["Cara"]["weight"], 1)
 
-    def test_build_resource_dynamics_graph_creates_extraction_and_transfer_edges(self):
-        rounds = [
-            {
-                "outcomes": [
-                    {"agent": "Alice", "action": "graze", "detail": "Grazed 4 units from the pasture."},
-                    {"agent": "Regina", "action": "sanction", "detail": "Queued sanction against Alice for next round."},
-                    {"agent": "Bob", "action": "share", "detail": "Shared 3 units to Cara."},
-                ]
-            }
-        ]
-
-        graph = graph_analysis.build_resource_dynamics_graph(rounds)
-
-        self.assertEqual(graph["COMMONS"]["Alice"]["weight"], 4)
-        self.assertEqual(graph["Regina"]["Alice"]["weight"], 2)
-        self.assertEqual(graph["Bob"]["Cara"]["weight"], 3)
-
     def test_build_analysis_summary_computes_thesis_ready_metrics(self):
         interaction_graph = graph_analysis.build_interaction_graph(
             [
@@ -58,27 +41,11 @@ class GraphAnalysisTests(unittest.TestCase):
                 {"world_state": {"locations": {"Pasture": ["Alice", "Bob"]}}},
             ]
         )
-        resource_graph = graph_analysis.build_resource_dynamics_graph(
-            [
-                {
-                    "outcomes": [
-                        {"agent": "Alice", "action": "graze", "detail": "Grazed 4 units from the pasture."},
-                        {"agent": "Bob", "action": "graze", "detail": "Grazed 2 units from the pasture."},
-                        {"agent": "Regina", "action": "sanction", "detail": "Queued sanction against Alice for next round."},
-                    ]
-                }
-            ]
-        )
-        final_summary = {"inventories": {"Alice": 5, "Bob": 3, "Cara": 1, "Regina": 0}}
 
-        summary = graph_analysis.build_analysis_summary(interaction_graph, resource_graph, final_summary)
+        summary = graph_analysis.build_analysis_summary(interaction_graph)
 
         self.assertAlmostEqual(summary["interaction"]["interaction_density"], 1.0)
         self.assertEqual(summary["interaction"]["total_interaction_events"], 4)
-        self.assertEqual(summary["resource"]["total_extracted"], 6)
-        self.assertEqual(summary["resource"]["total_redistributed"], 2)
-        self.assertEqual(summary["resource"]["top_accountability_actors"][0][0], "Regina")
-        self.assertGreater(summary["resource"]["end_state_gini"], 0.0)
 
     def test_plot_interaction_dynamics_uses_left_center_annotation_and_larger_legend(self):
         graph = graph_analysis.build_interaction_graph(
@@ -108,66 +75,18 @@ class GraphAnalysisTests(unittest.TestCase):
             ],
         )
 
-    def test_plot_resource_dynamics_uses_left_center_annotation_and_larger_legend(self):
-        graph = graph_analysis.build_resource_dynamics_graph(
-            [
-                {
-                    "outcomes": [
-                        {"agent": "Alice", "action": "graze", "detail": "Grazed 4 units from the pasture."},
-                        {"agent": "Bob", "action": "graze", "detail": "Grazed 2 units from the pasture."},
-                        {"agent": "Regina", "action": "sanction", "detail": "Queued sanction against Alice for next round."},
-                    ]
-                }
-            ]
-        )
-        metrics = graph_analysis.summarize_resource_dynamics(
-            graph,
-            {"inventories": {"Alice": 5, "Bob": 3, "Cara": 1, "Regina": 0}},
-        )
-
-        axis = self._render_and_capture_axis(graph_analysis.plot_resource_dynamics, graph, metrics)
-
-        summary_boxes = [text for text in axis.texts if text.get_text().startswith("Final inequality (Gini):")]
-        self.assertEqual(len(summary_boxes), 1)
-        summary_box = summary_boxes[0]
-        self.assertEqual(summary_box.get_position(), graph_analysis.ANNOTATION_POSITION)
-        self.assertEqual(summary_box.get_fontsize(), graph_analysis.ANNOTATION_FONT_SIZE)
-
-        legend = axis.get_legend()
-        self.assertIsNotNone(legend)
-        self.assertEqual(legend.get_texts()[0].get_fontsize(), graph_analysis.LEGEND_FONT_SIZE)
-        self.assertEqual(
-            [text.get_text() for text in legend.get_texts()],
-            [
-                "Blue edge = extraction from the commons",
-                "Green edge = sanction/share transfer between agents",
-                "Gold node = commons stock source",
-                "Agent node size = final held resources",
-            ],
-        )
-
     def test_render_analysis_artifacts_emits_thesis_and_legacy_filenames(self):
         interaction_graph = graph_analysis.build_interaction_graph(
             [{"world_state": {"locations": {"Pasture": ["Alice", "Bob"]}}}]
         )
-        resource_graph = graph_analysis.build_resource_dynamics_graph(
-            [{"outcomes": [{"agent": "Alice", "action": "graze", "detail": "Grazed 3 units from the pasture."}]}]
-        )
-        analysis = graph_analysis.build_analysis_summary(
-            interaction_graph,
-            resource_graph,
-            {"inventories": {"Alice": 3, "Bob": 1}},
-        )
+        analysis = graph_analysis.build_analysis_summary(interaction_graph)
         analysis["interaction_graph"] = interaction_graph
-        analysis["resource_graph"] = resource_graph
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_paths = graph_analysis.render_analysis_artifacts("run123", analysis, Path(tmpdir))
 
             self.assertTrue(output_paths["interaction"].exists())
-            self.assertTrue(output_paths["resource"].exists())
             self.assertTrue(output_paths["interaction_legacy"].exists())
-            self.assertTrue(output_paths["resource_legacy"].exists())
 
     def test_main_runs_end_to_end_with_mocked_db_payload(self):
         simulation = {
@@ -175,10 +94,6 @@ class GraphAnalysisTests(unittest.TestCase):
             "rounds": [
                 {
                     "world_state": {"locations": {"Pasture": ["Alice", "Bob"]}},
-                    "outcomes": [
-                        {"agent": "Alice", "action": "graze", "detail": "Grazed 3 units from the pasture."},
-                        {"agent": "Regina", "action": "sanction", "detail": "Queued sanction against Alice for next round."},
-                    ],
                 }
             ],
             "final_summary": {"inventories": {"Alice": 3, "Bob": 1, "Regina": 0}},
@@ -196,7 +111,6 @@ class GraphAnalysisTests(unittest.TestCase):
             self.assertIn("RESULTS-READY SUMMARY FOR run123", output)
             self.assertIn("Interaction density", output)
             self.assertTrue(Path(tmpdir, "results", "analysis", "agent-interaction-network-run123.png").exists())
-            self.assertTrue(Path(tmpdir, "results", "analysis", "resource-flow-network-run123.png").exists())
 
 
 if __name__ == "__main__":

@@ -208,7 +208,6 @@ These ids will vary per run because they come from the simulation documents stor
 Graph outputs:
 
 - `results/analysis/agent-interaction-network-<simulation_id>.png`
-- `results/analysis/resource-flow-network-<simulation_id>.png`
 
 Graph rendering uses [`NetworkX`](https://networkx.org/) with [`Matplotlib`](https://matplotlib.org/).
 

@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import networkx as nx
-import numpy as np
 from matplotlib.lines import Line2D
 
 ANNOTATION_POSITION = (0.03, 0.56)
@@ -80,64 +78,6 @@ def build_interaction_graph(rounds: list[dict]) -> nx.Graph:
     return graph
 
 
-def _extract_first_int(text: str) -> int | None:
-    match = re.search(r"(\d+)", text or "")
-    return int(match.group(1)) if match else None
-
-
-def _extract_named_target(text: str) -> str | None:
-    match = re.search(r"(?:against|to)\s+([A-Za-z]+)", text or "")
-    return match.group(1) if match else None
-
-
-def build_resource_dynamics_graph(rounds: list[dict]) -> nx.DiGraph:
-    """Build a commons-to-agent and agent-to-agent flow graph from outcomes."""
-    graph = nx.DiGraph()
-    flow_totals = defaultdict(int)
-    graph.add_node("COMMONS")
-
-    for round_data in rounds:
-        for outcome in round_data.get("outcomes", []):
-            agent = outcome.get("agent")
-            action = outcome.get("action")
-            detail = outcome.get("detail", "")
-
-            if not agent:
-                continue
-
-            if action == "graze" and "Grazed" in detail:
-                amount = _extract_first_int(detail)
-                if amount is not None:
-                    flow_totals[("COMMONS", agent)] += amount
-                continue
-
-            if action in {"sanction", "share"}:
-                target = _extract_named_target(detail)
-                amount = _extract_first_int(detail)
-                if target is not None:
-                    flow_totals[(agent, target)] += amount if amount is not None else 2
-
-    for (source, target), weight in flow_totals.items():
-        graph.add_edge(source, target, weight=weight)
-
-    return graph
-
-
-def calculate_gini(values: list[float]) -> float:
-    """Calculate the Gini coefficient (0 = equal, 1 = unequal)."""
-    if not values:
-        return 0.0
-
-    sorted_values = np.array(sorted(values), dtype=float)
-    total = np.sum(sorted_values)
-    if total <= 0:
-        return 0.0
-
-    n = len(sorted_values)
-    weighted_sum = np.sum(np.arange(1, n + 1) * sorted_values)
-    return float((2 * weighted_sum) / (n * total) - (n + 1) / n)
-
-
 def summarize_interaction_dynamics(graph: nx.Graph) -> dict:
     """Compute thesis-friendly coordination metrics from the interaction graph."""
     if graph.number_of_nodes() == 0:
@@ -153,49 +93,13 @@ def summarize_interaction_dynamics(graph: nx.Graph) -> dict:
         "interaction_density": nx.density(graph),
         "local_coordination": nx.average_clustering(graph, weight="weight"),
         "total_interaction_events": int(sum(weighted_degree.values()) / 2),
-        "most_central_interactors": sorted(
-            weighted_degree.items(), key=lambda item: item[1], reverse=True
-        )[:5],
+        "most_central_interactors": sorted(weighted_degree.items(), key=lambda item: item[1], reverse=True)[:5],
     }
 
 
-def summarize_resource_dynamics(resource_graph: nx.DiGraph, final_summary: dict) -> dict:
-    """Compute extraction, accountability, and inequality metrics."""
-    inventories = final_summary.get("inventories", {})
-    resource_values = list(inventories.values())
-    extraction_by_agent = defaultdict(int)
-    redistribution_by_agent = defaultdict(int)
-
-    for source, target, data in resource_graph.edges(data=True):
-        weight = data.get("weight", 0)
-        if source == "COMMONS":
-            extraction_by_agent[target] += weight
-        else:
-            redistribution_by_agent[source] += weight
-
-    extraction_total = sum(extraction_by_agent.values())
-    redistribution_total = sum(redistribution_by_agent.values())
-    return {
-        "end_state_gini": calculate_gini(resource_values),
-        "mean_final_resources": float(np.mean(resource_values)) if resource_values else 0.0,
-        "resource_dispersion": float(np.std(resource_values)) if resource_values else 0.0,
-        "total_extracted": extraction_total,
-        "total_redistributed": redistribution_total,
-        "top_accountability_actors": sorted(
-            redistribution_by_agent.items(), key=lambda item: item[1], reverse=True
-        )[:5],
-        "final_inventories": inventories,
-    }
-
-
-def build_analysis_summary(
-    interaction_graph: nx.Graph, resource_graph: nx.DiGraph, final_summary: dict
-) -> dict:
-    """Package all derived post-simulation analysis into one structure."""
-    return {
-        "interaction": summarize_interaction_dynamics(interaction_graph),
-        "resource": summarize_resource_dynamics(resource_graph, final_summary),
-    }
+def build_analysis_summary(interaction_graph: nx.Graph) -> dict:
+    """Package derived post-simulation interaction analysis into one structure."""
+    return {"interaction": summarize_interaction_dynamics(interaction_graph)}
 
 
 def _safe_node_sizes(graph, weighted_degree: dict[str, float], floor: float, span: float) -> list[float]:
@@ -203,18 +107,6 @@ def _safe_node_sizes(graph, weighted_degree: dict[str, float], floor: float, spa
         return []
     max_weight = max(weighted_degree.values(), default=1) or 1
     return [(weighted_degree.get(node, 0) / max_weight) * span + floor for node in graph.nodes()]
-
-
-def _resource_layout(graph: nx.DiGraph) -> dict:
-    positions = {"COMMONS": (0.0, 1.05)}
-    agents = sorted(node for node in graph.nodes() if node != "COMMONS")
-    if not agents:
-        return positions
-
-    for index, agent in enumerate(agents):
-        angle = 2 * np.pi * index / len(agents)
-        positions[agent] = (0.9 * np.cos(angle), 0.75 * np.sin(angle) - 0.25)
-    return positions
 
 
 def _save_current_figure(primary_path: Path, alias_path: Path | None = None) -> list[Path]:
@@ -319,99 +211,9 @@ def plot_interaction_dynamics(graph: nx.Graph, metrics: dict, output_path: Path,
     plt.close()
 
 
-def plot_resource_dynamics(graph: nx.DiGraph, metrics: dict, output_path: Path, alias_path: Path | None = None):
-    """Render thesis-ready agent-environment extraction and accountability dynamics."""
-    plt.figure(figsize=(12, 8))
-    axis = plt.gca()
-    positions = _resource_layout(graph)
-    inventories = metrics["final_inventories"]
-    max_inventory = max(inventories.values(), default=1) or 1
-
-    node_sizes = []
-    node_colors = []
-    for node in graph.nodes():
-        if node == "COMMONS":
-            node_sizes.append(950)
-            node_colors.append("#f1c40f")
-        else:
-            inventory = inventories.get(node, 0)
-            node_sizes.append((inventory / max_inventory) * 1200 + 260)
-            node_colors.append("#d7ecf4")
-
-    max_weight = max((data["weight"] for _, _, data in graph.edges(data=True)), default=1) or 1
-    for source, target, data in graph.edges(data=True):
-        weight = data["weight"]
-        is_extraction = source == "COMMONS"
-        nx.draw_networkx_edges(
-            graph,
-            positions,
-            edgelist=[(source, target)],
-            width=(weight / max_weight) * 4.5 + 1.0,
-            edge_color="#315efb" if is_extraction else "#2e8b57",
-            alpha=0.55 if is_extraction else 0.75,
-            arrows=True,
-            arrowsize=18,
-            arrowstyle="->",
-            ax=axis,
-        )
-
-    nx.draw_networkx_nodes(
-        graph,
-        positions,
-        node_size=node_sizes,
-        node_color=node_colors,
-        edgecolors="black",
-        linewidths=1.8,
-        ax=axis,
-    )
-    nx.draw_networkx_labels(graph, positions, font_size=9, font_weight="bold", ax=axis)
-
-    top_names = ", ".join(name for name, _ in metrics["top_accountability_actors"][:3]) or "No accountability transfers"
-    annotation = (
-        f"Final inequality (Gini): {metrics['end_state_gini']:.2f}\n"
-        f"Commons extracted: {metrics['total_extracted']} units\n"
-        f"Agent transfers: {metrics['total_redistributed']} units\n"
-        f"Key accountability agents: {top_names}"
-    )
-    _add_summary_box(axis, annotation)
-
-    legend_handles = [
-        Line2D([0], [0], color="#315efb", lw=2.5, label="Blue edge = extraction from the commons"),
-        Line2D([0], [0], color="#2e8b57", lw=2.5, label="Green edge = sanction/share transfer between agents"),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            markerfacecolor="#f1c40f",
-            markeredgecolor="black",
-            markersize=LEGEND_MARKER_SIZE,
-            label="Gold node = commons stock source",
-        ),
-        Line2D(
-            [0],
-            [0],
-            marker="o",
-            color="w",
-            markerfacecolor="#d7ecf4",
-            markeredgecolor="black",
-            markersize=LEGEND_MARKER_SIZE,
-            label="Agent node size = final held resources",
-        ),
-    ]
-    _add_plot_legend(axis, legend_handles)
-    plt.axis("off")
-    plt.tight_layout()
-    saved_paths = _save_current_figure(output_path, alias_path)
-    for path in saved_paths:
-        print(f"  Saved: {path}")
-    plt.close()
-
-
 def print_thesis_summary(simulation_id: str, rounds: list[dict], analysis: dict):
     """Print a compact summary that can be cited in the Results section."""
     interaction = analysis["interaction"]
-    resource = analysis["resource"]
 
     print(f"\n  {'=' * 58}")
     print(f"  RESULTS-READY SUMMARY FOR {simulation_id}")
@@ -420,26 +222,17 @@ def print_thesis_summary(simulation_id: str, rounds: list[dict], analysis: dict)
     print(f"  Interaction density:          {interaction['interaction_density']:.3f}")
     print(f"  Local coordination:           {interaction['local_coordination']:.3f}")
     print(f"  Repeated interaction events:  {interaction['total_interaction_events']}")
-    print(f"  End-state inequality (Gini):  {resource['end_state_gini']:.3f}")
-    print(f"  Total extracted:              {resource['total_extracted']}")
-    print(f"  Total accountability flows:   {resource['total_redistributed']}")
-    print(f"  Mean final resources:         {resource['mean_final_resources']:.1f}")
-    print(f"  Resource dispersion:          {resource['resource_dispersion']:.1f}")
 
     top_interactors = ", ".join(name for name, _ in interaction["most_central_interactors"][:3]) or "n/a"
-    top_accountability = ", ".join(name for name, _ in resource["top_accountability_actors"][:3]) or "n/a"
     print(f"  Most central interactors:     {top_interactors}")
-    print(f"  Top accountability actors:    {top_accountability}")
-    print("  Interpretation focus:         coordination structure + extraction/accountability dynamics")
+    print("  Interpretation focus:         coordination structure and recurring co-presence patterns")
 
 
 def render_analysis_artifacts(simulation_id: str, analysis: dict, output_dir: Path) -> dict[str, Path]:
-    """Render both thesis-oriented post-analysis figures."""
+    """Render the thesis-oriented agent interaction figure."""
     output_dir.mkdir(parents=True, exist_ok=True)
     interaction_path = output_dir / f"agent-interaction-network-{simulation_id}.png"
-    resource_path = output_dir / f"resource-flow-network-{simulation_id}.png"
     legacy_interaction_path = output_dir / f"{simulation_id}_social.png"
-    legacy_resource_path = output_dir / f"{simulation_id}_resource.png"
 
     plot_interaction_dynamics(
         analysis["interaction_graph"],
@@ -447,18 +240,10 @@ def render_analysis_artifacts(simulation_id: str, analysis: dict, output_dir: Pa
         interaction_path,
         alias_path=legacy_interaction_path,
     )
-    plot_resource_dynamics(
-        analysis["resource_graph"],
-        analysis["resource"],
-        resource_path,
-        alias_path=legacy_resource_path,
-    )
 
     return {
         "interaction": interaction_path,
-        "resource": resource_path,
         "interaction_legacy": legacy_interaction_path,
-        "resource_legacy": legacy_resource_path,
     }
 
 
@@ -497,14 +282,9 @@ def main():
         f"{interaction_graph.number_of_edges()} repeated-contact links"
     )
 
-    print("\n  Deriving resource extraction and accountability flows...")
-    resource_graph = build_resource_dynamics_graph(rounds)
-    print(f"  {resource_graph.number_of_edges()} directed flows")
-
     print("\n  Computing thesis-oriented summary metrics...")
-    analysis = build_analysis_summary(interaction_graph, resource_graph, final_summary)
+    analysis = build_analysis_summary(interaction_graph)
     analysis["interaction_graph"] = interaction_graph
-    analysis["resource_graph"] = resource_graph
 
     print("\n  Rendering thesis-ready figures...")
     render_analysis_artifacts(simulation_id, analysis, Path("results") / "analysis")
