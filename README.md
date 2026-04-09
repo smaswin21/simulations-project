@@ -157,16 +157,30 @@ python -m ui.pygame_app --simulation-id 69c7cc092a96982c1be09c83
 python -m ui.pygame_app --simulation-id 69c7d50e166f08559d20612e
 ```
 
+Sample replay videos:
+
+| B1 Replay | V2 Replay |
+| --- | --- |
+| [<img src="assets/readme-media/B1-thumbnail.png" alt="B1 replay preview" width="100%">](assets/readme-media/B1.mov) | [<img src="assets/readme-media/V2-thumbnail.png" alt="V2 replay preview" width="100%">](assets/readme-media/V2.mov) |
+
+Click either preview to open the `.mov` file.
+
 These ids are only examples. Your simulation ids will be different based on the logs collected in your own runs.
 
 ## 05. Graphs and Analysis
 
-Ablation study:
+RQ1: memory ablation study:
 
 ```bash
-python -m scripts.run_ablation --runs 3 --rounds 10
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag diverse_traits --cohort-source mongo
 python -m scripts.plot_ablation
 ```
+
+RQ1 outputs:
+
+- `results/ablation_A_diverse_traits.jsonl`: memory OFF runs
+- `results/ablation_B_diverse_traits.jsonl`: memory ON runs
+- `results/ablation_plots.png`: ablation plot for commons stock and gini over time
 
 Plot generation uses [`Matplotlib`](https://matplotlib.org/).
 
@@ -198,10 +212,48 @@ Graph outputs:
 
 Graph rendering uses [`NetworkX`](https://networkx.org/) with [`Matplotlib`](https://matplotlib.org/).
 
-Optional cohort comparison plot:
+RQ2: similar vs diverse personality cohorts:
+
+This is a long-running simulation workflow because it executes multiple ablation jobs across seven experimental conditions.
 
 ```bash
-python -m scripts.analyze_cohorts --baseline-tag diverse_traits --pair-tag similar_extraversion --condition B
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag diverse_traits --cohort-source mongo
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_agreeableness --cohort-file EDA/similar_traits/cohort_similar_agreeableness.json
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_conscientiousness --cohort-file EDA/similar_traits/cohort_similar_conscientiousness.json
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_extraversion --cohort-file EDA/similar_traits/cohort_similar_extraversion.json
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_neuroticism --cohort-file EDA/similar_traits/cohort_similar_neuroticism.json
+python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_openness --cohort-file EDA/similar_traits/cohort_similar_openness.json
+```
+
+This produces the seven conditions used for RQ2:
+
+- `ablation_B_diverse_traits.jsonl`: diverse cohort with memory ON
+- `ablation_B_similar_agreeableness.jsonl`: agreeableness cohort with memory ON
+- `ablation_B_similar_conscientiousness.jsonl`: conscientiousness cohort with memory ON
+- `ablation_B_similar_extraversion.jsonl`: extraversion cohort with memory ON
+- `ablation_B_similar_neuroticism.jsonl`: neuroticism cohort with memory ON
+- `ablation_B_similar_openness.jsonl`: openness cohort with memory ON
+- `ablation_A_diverse_traits.jsonl`: memory OFF baseline
+
+All RQ2 raw result files are written to `results/`.
+
+RQ2 statistical study:
+
+```bash
+python -m scripts.rq2_statistics
+```
+
+Statistical outputs are written to `results/cohort-analysis/`:
+
+- `rq2-descriptive-stats.csv`: means and sample standard deviations for Commons Stock and Gini
+- `rq2-anova-summary.csv`: one-way ANOVA summary for the seven conditions
+- `rq2-tukey-hsd.csv`: full Tukey HSD pairwise comparisons for both target metrics
+- `rq2-statistics-report.txt`: short thesis-style text summary
+
+Optional pairwise cohort plot:
+
+```bash
+python -m scripts.analyze_cohorts --tags diverse_traits similar_agreeableness similar_conscientiousness similar_extraversion similar_neuroticism similar_openness --baseline-tag diverse_traits --pair-tag similar_extraversion --condition B
 ```
 
 ## 06. Outputs
@@ -211,6 +263,7 @@ python -m scripts.analyze_cohorts --baseline-tag diverse_traits --pair-tag simil
 - `results/ablation_*.jsonl`: raw ablation outputs
 - `results/ablation_plots.png`: ablation chart
 - `results/analysis/`: post-run network and flow graphs
+- `results/cohort-analysis/`: RQ2 descriptive statistics, ANOVA, Tukey HSD, and pairwise plots
 - `memory_plots/`: single-run memory plots
 
 Each run prints a simulation id such as:

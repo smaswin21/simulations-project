@@ -77,10 +77,17 @@ def write_summary_csv(rows: list[dict], output_path: Path) -> None:
 
 
 def thesis_label(tag: str) -> str:
-    if tag == "diverse_traits":
-        return "Diverse Traits Cohort"
-    if tag == "similar_extraversion":
-        return "Similar Extraversion Cohort"
+    fixed_labels = {
+        "diverse_traits": "Diverse Traits Cohort",
+        "similar_agreeableness": "Similar Agreeableness Cohort",
+        "similar_conscientiousness": "Similar Conscientiousness Cohort",
+        "similar_extraversion": "Similar Extraversion Cohort",
+        "similar_neuroticism": "Similar Neuroticism Cohort",
+        "similar_openness": "Similar Openness Cohort",
+        "memory_off": "Memory OFF",
+    }
+    if tag in fixed_labels:
+        return fixed_labels[tag]
     words = tag.replace("_", " ").split()
     return " ".join(word.capitalize() for word in words)
 
@@ -173,7 +180,9 @@ if __name__ == "__main__":
         default=[
             "diverse_traits",
             "similar_agreeableness",
+            "similar_conscientiousness",
             "similar_extraversion",
+            "similar_neuroticism",
             "similar_openness",
         ],
     )
