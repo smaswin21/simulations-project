@@ -15,6 +15,7 @@ A thesis project on commons governance with a local-first 10-agent simulation: 7
     </tr>
   </tbody>
 </table>
+
 ## 01. Project
 
 - Scenario: a shared pasture with asymmetric roles and limited ecological information
@@ -158,6 +159,22 @@ python run_simulation.py --cohort-file EDA/similar_traits/cohort_similar_opennes
 ```
 
 Replay a stored run:
+
+<table>
+  <thead>
+    <tr>
+      <th colspan="2">Replay Window Preview</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="assets/readme-media/B1-thumbnail.png" alt="Replay window preview one" width="100%"></td>
+      <td><img src="assets/readme-media/V2-thumbnail.png" alt="Replay window preview two" width="100%"></td>
+    </tr>
+  </tbody>
+</table>
+
+Caption: example simulator layout shown side by side.
 
 ```bash
 python -m ui.pygame_app --simulation-id <SIMULATION_ID>
