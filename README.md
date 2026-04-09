@@ -158,29 +158,6 @@ python run_simulation.py --cohort-source mongo
 python run_simulation.py --cohort-file EDA/similar_traits/cohort_similar_openness.json
 ```
 
-Replay a stored run:
-
-<table>
-  <thead>
-    <tr>
-      <th colspan="2">Replay Window Preview</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="assets/readme-media/B1-thumbnail.png" alt="Replay window preview one" width="100%"></td>
-      <td><img src="assets/readme-media/V2-thumbnail.png" alt="Replay window preview two" width="100%"></td>
-    </tr>
-  </tbody>
-</table>
-
-Caption: example simulator layout shown side by side.
-
-```bash
-python -m ui.pygame_app --simulation-id <SIMULATION_ID>
-python -m ui.pygame_app --simulation-id <SIMULATION_ID> --round-duration-ms 1000 --width 1200 --height 800
-```
-
 Replay display uses [`Pygame`](https://www.pygame.org/docs/).
 
 Example simulation ids:
