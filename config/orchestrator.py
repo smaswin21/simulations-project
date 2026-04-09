@@ -293,7 +293,10 @@ class Orchestrator:
     def _print_summary(self, round_num: int, actions: list[dict], outcomes: list[dict]):
         act_label, act_desc = _get_act(round_num, self.scenario)
         print(f"\n{'━' * 50}")
-        print(f"  ROUND {round_num}/{self.env.max_rounds} (Act {act_label}: {act_desc})")
+        round_header = f"  ROUND {round_num}/{self.env.max_rounds}"
+        if (act_label, act_desc) != ("?", "Unknown"):
+            round_header += f" (Act {act_label}: {act_desc})"
+        print(round_header)
         print(f"{'━' * 50}")
 
         for message in self.env.round_messages:

@@ -29,16 +29,18 @@ LOCAL_MODEL_PRESETS = [
 ]
 HOSTED_MODEL_PRESETS = {
     "openai": [
-        "gpt-5.4",
-        "gpt-5-nano",
+        "gpt-4o",
+        "gpt-4o-mini",
     ],
     "anthropic": [
-        "claude-3-5-sonnet-latest",
-        "claude-3-5-haiku-latest",
+        "claude-sonnet-4-5-20250514",
+        "claude-haiku-4-5-20251001",
+        "claude-3-5-sonnet-20241022",
+        "claude-3-5-haiku-20241022",
     ],
     "gemini": [
-        "gemini-3-flash-preview",
         "gemini-2.0-flash",
+        "gemini-1.5-pro",
     ],
 }
 OLLAMA_DISCOVERY_TIMEOUT_SECONDS = 0.75

@@ -101,6 +101,19 @@ ollama pull qwen3.5:9b
 
 Official Ollama docs: [ollama.com](https://ollama.com/)
 
+### 8. Optional: Hugging Face token for EDA
+
+If you plan to use the notebook in `EDA/EDA_Notebook.ipynb`, set a [`Hugging Face`](https://huggingface.co/) token first. The notebook uses the Hugging Face dataset stack and reads `HF_TOKEN` for authentication.
+
+```bash
+HF_TOKEN=<your-hugging-face-token>
+```
+
+Useful links:
+
+- [Hugging Face Tokens](https://huggingface.co/settings/tokens)
+- [Hugging Face Datasets](https://huggingface.co/docs/datasets/)
+
 ## 03. Environment and Providers
 
 Minimum required variables:
@@ -125,6 +138,10 @@ LLM_TEMPERATURE=0.4
 LLM_MAX_TOKENS=450
 MAX_CONCURRENT_AGENTS=5
 ```
+
+EDA note:
+
+- add `HF_TOKEN` if you want to run `EDA/EDA_Notebook.ipynb`
 
 The full env template lives in `.env.example`.
 
