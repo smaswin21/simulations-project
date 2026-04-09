@@ -2,10 +2,19 @@
 
 A thesis project on commons governance with a local-first 10-agent simulation: 7 Herders, 2 Regulators, and 1 Scout. The project compares how memory, role asymmetry, and model choice affect coordination, sustainability, and inequality across repeated rounds.
 
- Demo | Demo2 |
-| --- | --- |
-| <img src="assets/readme-media/B1-loop.gif" alt="B1 looping replay preview" width="100%"> | <img src="assets/readme-media/V2-loop.gif" alt="V2 looping replay preview" width="100%"> |
-
+<table>
+  <thead>
+    <tr>
+      <th colspan="2">Demo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="assets/readme-media/B1-loop.gif" alt="B1 looping replay preview" width="100%"></td>
+      <td><img src="assets/readme-media/V2-loop.gif" alt="V2 looping replay preview" width="100%"></td>
+    </tr>
+  </tbody>
+</table>
 ## 01. Project
 
 - Scenario: a shared pasture with asymmetric roles and limited ecological information
