@@ -184,14 +184,14 @@ These ids are only examples. Your simulation ids will be different based on the 
 
 ## 05. Graphs and Analysis
 
-RQ1: memory ablation study:
+####  RQ1: Memory ablation study:
 
 ```bash
 python -m scripts.run_ablation --runs 3 --rounds 10 --tag diverse_traits --cohort-source mongo
 python -m scripts.plot_ablation
 ```
 
-RQ1 outputs:
+####  RQ1 outputs:
 
 - `results/ablation_A_diverse_traits.jsonl`: memory OFF runs
 - `results/ablation_B_diverse_traits.jsonl`: memory ON runs
@@ -226,7 +226,7 @@ Graph outputs:
 
 Graph rendering uses [`NetworkX`](https://networkx.org/) with [`Matplotlib`](https://matplotlib.org/).
 
-RQ2: similar vs diverse personality cohorts:
+####  RQ2: similar vs diverse personality cohorts:
 
 This is a long-running simulation workflow because it executes multiple ablation jobs across seven experimental conditions.
 
@@ -239,7 +239,7 @@ python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_neuroticism --
 python -m scripts.run_ablation --runs 3 --rounds 10 --tag similar_openness --cohort-file EDA/similar_traits/cohort_similar_openness.json
 ```
 
-This produces the seven conditions used for RQ2:
+#### This produces the seven conditions used for RQ2:
 
 - `ablation_B_diverse_traits.jsonl`: diverse cohort with memory ON
 - `ablation_B_similar_agreeableness.jsonl`: agreeableness cohort with memory ON
